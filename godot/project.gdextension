@@ -6,8 +6,8 @@ reloadable = true
 [libraries]
 linux.debug.x86_64 =     "res://../rust/target/debug/libvirtual_space_robots.so"
 linux.release.x86_64 =   "res://../rust/target/release/libvirtual_space_robots.so"
-windows.debug.x86_64 =   "res://../rust/target/debug/virtual_space_robots.dll"
-windows.release.x86_64 = "res://../rust/target/release/virtual_space_robots.dll"
+windows.debug.x86_64 =   "res://../rust/target/x86_64-pc-windows-gnu/debug/virtual_space_robots.dll"
+windows.release.x86_64 = "res://../rust/target/x86_64-pc-windows-gnu/release/virtual_space_robots.dll"
 macos.debug =            "res://../rust/target/debug/libvirtual_space_robots.dylib"
 macos.release =          "res://../rust/target/release/libvirtual_space_robots.dylib"
 macos.debug.arm64 =      "res://../rust/target/debug/libvirtual_space_robots.dylib"
