@@ -1,33 +1,74 @@
-use godot::engine::{ISprite2D, Sprite2D};
+use std::f64::consts::PI;
+use std::path::PathBuf;
+
+use bean_script::error::{BeanResult, ErrorSource};
+use bean_script::modules::registry::ModuleRegistry;
+use bean_script::modules::CustomModule;
+use bean_script::util::make_ref;
+use bean_script::{evaluator, lexer, parser};
+use godot::engine::utilities::move_toward;
+use godot::engine::{INode, Node};
 use godot::prelude::*;
 
-#[derive(GodotClass)]
-#[class(base=Sprite2D)]
-struct Player {
-	speed: f64,
-	angular_speed: f64,
+const UPDATE_DELAY: f64 = 0.05;
 
-	base: Base<Sprite2D>,
+#[derive(GodotClass)]
+#[class(base=Node)]
+struct ShipController {
+    scope: Option<CustomModule>,
+    update_timer: f64,
+
+    base: Base<Node>,
 }
 
 #[godot_api]
-impl ISprite2D for Player {
-	fn init(base: Base<Sprite2D>) -> Self {
-		godot_print!("Hello, world!"); // Prints to the Godot console
+impl INode for ShipController {
+    fn init(base: Base<Node>) -> Self {
+        Self {
+            scope: None,
+            update_timer: 0.0,
+            base,
+        }
+    }
 
-		Self {
-			speed: 400.0,
-			angular_speed: std::f64::consts::PI,
-			base,
-		}
-	}
-	fn physics_process(&mut self, delta: f64) {
-		// In GDScript, this would be:
-		// rotation += angular_speed * delta
+    fn physics_process(&mut self, delta: f64) {
+        if let Some(scope) = &self.scope {
+            self.update_timer = move_toward(self.update_timer, 0.0, delta);
+            if self.update_timer == 0.0 {
+                self.update_timer = UPDATE_DELAY;
+                godot_print!("update smth");
+            }
+        }
+    }
+}
 
-		let radians = (self.angular_speed * delta) as f32;
-		self.base_mut().rotate(radians);
-		// The 'rotate' method requires a f32,
-		// therefore we convert 'self.angular_speed * delta' which is a f64 to a f32
-	}
+#[godot_api]
+impl ShipController {
+    #[func]
+    fn set_code(&mut self, file: String, path: String) {
+        let tokens = lexer::tokenize(file);
+
+        let tree = parser::parse(tokens);
+        if let Err(error) = tree {
+            println!(
+                "\x1b[31;1merror\x1b[0m: {}",
+                error.trace(ErrorSource::File(path.clone()))
+            );
+            return;
+        }
+        let tree = tree.unwrap();
+
+        let mut dir_path = PathBuf::from(path.clone());
+        dir_path.pop();
+
+        let registry = make_ref(ModuleRegistry::new());
+        let program_scope = CustomModule::new(registry, dir_path);
+        let result = evaluator::evaluate(&tree, make_ref(program_scope));
+        if let Err(error) = result {
+            println!(
+                "\x1b[31;1merror\x1b[0m: {}",
+                error.trace(ErrorSource::File(path.clone()))
+            );
+        }
+    }
 }

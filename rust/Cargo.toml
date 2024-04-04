@@ -7,4 +7,5 @@ edition = "2021"
 crate-type = ["cdylib"]  # Compile this crate to a dynamic C library.
 
 [dependencies]
+bean-script = "0.1.3"
 godot = { git = "https://github.com/godot-rust/gdext", branch = "master" }
