@@ -1,0 +1,5 @@
+use("robot_api:tick")
+
+tick: {
+	forward(10)
+}
