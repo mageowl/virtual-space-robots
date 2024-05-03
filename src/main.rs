@@ -29,6 +29,7 @@ fn main() {
         // UPDATE //
         ships.update(&rl);
         bullet_pool.borrow_mut().update(&rl);
+        bullet_pool.borrow_mut().collide(&ships);
 
         // DRAW  //
         let mut d = rl.begin_drawing(&thread);

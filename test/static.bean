@@ -1,0 +1,5 @@
+use("robot_api", <robot>)
+
+sleep(1000)
+robot.turn(0.5)
+robot.shoot

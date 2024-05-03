@@ -55,6 +55,10 @@ impl Object for Bullet {
             Color::RED,
         );
     }
+
+    fn get_shape(&self) -> (Vector2, f32) {
+        (self.pos, 10.0)
+    }
 }
 
 pub struct BulletPool {
@@ -86,6 +90,14 @@ impl BulletPool {
 
         Ok(())
     }
+
+    pub fn collide(&mut self, other: &impl Object) {
+        for bullet in &mut self.awake {
+            if other.is_colliding(bullet) {
+                bullet.sleep_queued = true
+            }
+        }
+    }
 }
 
 impl Object for BulletPool {
@@ -106,5 +118,12 @@ impl Object for BulletPool {
 
     fn draw(&self, d: &mut RaylibDrawHandle, assets: &Assets) {
         self.awake.draw(d, assets)
+    }
+
+    fn is_colliding(&self, other: &impl Object) -> bool {
+        self.awake.is_colliding(other)
+    }
+    fn get_shape(&self) -> (Vector2, f32) {
+        (Vector2::zero(), 0.0)
     }
 }

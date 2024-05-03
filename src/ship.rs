@@ -56,7 +56,7 @@ pub struct Ship {
 impl Ship {
     const MOVE_SPEED: f32 = 100.0;
     const TURN_SPEED: f32 = 70.0;
-    const SHOOT_OFFSET: f32 = 20.0;
+    const SHOOT_OFFSET: f32 = 35.1;
     const SHOOT_COOLDOWN: f32 = 1.0;
 
     pub fn new(path: String, bullet_pool: MutRc<BulletPool>) -> Self {
@@ -161,6 +161,7 @@ impl Object for Ship {
             }
         }
     }
+
     fn draw(&self, d: &mut RaylibDrawHandle, assets: &Assets) {
         d.draw_texture_pro(
             &assets.ship,
@@ -170,5 +171,9 @@ impl Object for Ship {
             self.rotation,
             Color::WHITE,
         );
+    }
+
+    fn get_shape(&self) -> (Vector2, f32) {
+        (self.pos, 20.0)
     }
 }
