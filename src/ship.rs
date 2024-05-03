@@ -17,28 +17,29 @@ use bean_script::{
 use raylib::{
     color::Color,
     drawing::{RaylibDraw, RaylibDrawHandle},
+    get_random_value,
     math::{Rectangle, Vector2},
     RaylibHandle,
 };
 
 use self::api::APIRequest;
-use crate::assets::Assets;
+use crate::{assets::Assets, bullet::BulletPool, object::Object};
 
 mod api;
 
-enum State {
+enum Action {
     Waiting,
     Moving(f32),
     Turning(f32),
     Shooting(f32),
 }
 
-impl State {
+impl Action {
     fn from_req(req: APIRequest) -> Self {
         match req {
-            APIRequest::Move(dist) => State::Moving(dist),
-            APIRequest::Turn(dist) => State::Turning(dist),
-            APIRequest::Shoot => State::Shooting(3.0),
+            APIRequest::Move(dist) => Action::Moving(dist),
+            APIRequest::Turn(dist) => Action::Turning(dist),
+            APIRequest::Shoot => Action::Shooting(Ship::SHOOT_COOLDOWN),
         }
     }
 }
@@ -48,12 +49,15 @@ pub struct Ship {
     rotation: f32,
     thread: JoinHandle<()>,
     rx: Receiver<APIRequest>,
-    state: State,
+    state: Action,
+    bullet_pool: BulletPool,
 }
 
 impl Ship {
     const MOVE_SPEED: f32 = 100.0;
     const TURN_SPEED: f32 = 70.0;
+    const SHOOT_OFFSET: f32 = 20.0;
+    const SHOOT_COOLDOWN: f32 = 1.0;
 
     pub fn new(path: String) -> Self {
         let (tx, rx) = mpsc::channel();
@@ -85,15 +89,80 @@ impl Ship {
         });
 
         Self {
-            pos: (640.0, 480.0).into(),
+            pos: (
+                get_random_value::<i64>(80, 1200) as f32,
+                get_random_value::<i64>(80, 880) as f32,
+            )
+                .into(),
             rotation: 0.0,
             thread,
             rx,
-            state: State::Waiting,
+            state: Action::Waiting,
+            bullet_pool: BulletPool::new(10),
         }
     }
 
-    pub fn draw(&self, d: &mut RaylibDrawHandle, assets: &Assets) {
+    fn next(&mut self) {
+        self.state = Action::Waiting;
+        self.thread.thread().unpark()
+    }
+}
+
+impl Object for Ship {
+    fn update(&mut self, rl: &RaylibHandle) {
+        match &self.state {
+            Action::Waiting => {
+                let received = self.rx.try_recv();
+                if let Ok(msg) = received {
+                    if let APIRequest::Shoot = &msg {
+                        self.bullet_pool
+                            .shoot(
+                                self.pos
+                                    + Vector2::new(
+                                        self.rotation.to_radians().sin(),
+                                        self.rotation.to_radians().cos(),
+                                    ) * Self::SHOOT_OFFSET,
+                                self.rotation,
+                            )
+                            .unwrap();
+                    }
+                    self.state = Action::from_req(msg);
+                }
+            }
+            Action::Moving(dist) => {
+                let dist_moved = dist.abs().min(Self::MOVE_SPEED * rl.get_frame_time());
+                self.pos += Vector2::new(
+                    self.rotation.to_radians().sin(),
+                    self.rotation.to_radians().cos(),
+                ) * dist_moved
+                    * dist.signum();
+                if dist_moved < dist.abs() {
+                    self.state = Action::Moving(dist - dist_moved * dist.signum());
+                } else {
+                    self.next();
+                }
+            }
+            Action::Turning(dist) => {
+                let dist_moved = dist.abs().min(Self::TURN_SPEED * rl.get_frame_time());
+                self.rotation += dist_moved * dist.signum();
+                if dist_moved < dist.abs() {
+                    self.state = Action::Turning(dist - dist_moved * dist.signum());
+                } else {
+                    self.next();
+                }
+            }
+            Action::Shooting(cooldown) => {
+                if rl.get_frame_time() < *cooldown {
+                    self.state = Action::Shooting(cooldown - rl.get_frame_time())
+                } else {
+                    self.next();
+                }
+            }
+        }
+
+        self.bullet_pool.update(rl);
+    }
+    fn draw(&self, d: &mut RaylibDrawHandle, assets: &Assets) {
         d.draw_texture_pro(
             &assets.ship,
             Rectangle::new(0.0, 0.0, 50.0, 50.0),
@@ -102,50 +171,7 @@ impl Ship {
             self.rotation,
             Color::WHITE,
         );
-    }
 
-    pub fn update(&mut self, rl: &RaylibHandle) {
-        match &self.state {
-            State::Waiting => {
-                let received = self.rx.try_recv();
-                if let Ok(msg) = received {
-                    self.state = State::from_req(msg);
-                }
-            }
-            State::Moving(dist) => {
-                let dist_moved = dist.abs().min(Self::MOVE_SPEED * rl.get_frame_time());
-                self.pos += <(f32, f32) as Into<Vector2>>::into((
-                    self.rotation.to_radians().sin(),
-                    self.rotation.to_radians().cos(),
-                )) * dist_moved
-                    * dist.signum();
-                if dist_moved < dist.abs() {
-                    self.state = State::Moving(dist - dist_moved * dist.signum());
-                } else {
-                    self.next();
-                }
-            }
-            State::Turning(dist) => {
-                let dist_moved = dist.abs().min(Self::TURN_SPEED * rl.get_frame_time());
-                self.rotation += dist_moved * dist.signum();
-                if dist_moved < dist.abs() {
-                    self.state = State::Turning(dist - dist_moved * dist.signum());
-                } else {
-                    self.next();
-                }
-            }
-            State::Shooting(cooldown) => {
-                if rl.get_frame_time() < *cooldown {
-                    self.state = State::Shooting(cooldown - rl.get_frame_time())
-                } else {
-                    self.next();
-                }
-            }
-        }
-    }
-
-    fn next(&mut self) {
-        self.state = State::Waiting;
-        self.thread.thread().unpark()
+        self.bullet_pool.draw(d, assets);
     }
 }

@@ -1,0 +1,7 @@
+use("robot_api", <robot>)
+
+while: {
+	if(eq(robot.raycast, "ship")): return(false)
+	turn(3)
+}
+repeat(3): robot.shoot()
