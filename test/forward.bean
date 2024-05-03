@@ -1,5 +1,6 @@
-use("robot_api:tick")
+use("robot_api", <robot>)
 
-tick: {
-	forward(10)
-}
+robot.move(100)
+robot.turn(0.5)
+robot.move(-100)
+robot.shoot()

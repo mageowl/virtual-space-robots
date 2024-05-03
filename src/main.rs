@@ -1,6 +1,5 @@
 use std::env;
 
-use bean_script::error::{BeanResult, ErrorSource};
 use raylib::prelude::*;
 use ship::Ship;
 
@@ -14,18 +13,13 @@ fn main() {
     let assets = assets::load(&mut rl, &thread);
 
     let path = env::args().nth(1).expect("Expected path to bean file");
-    let mut ship = match Ship::new(path.clone()) {
-        Err(error) => {
-            println!(
-                "\x1b[31;1merror\x1b[0m: {}",
-                error.trace(ErrorSource::File(path))
-            );
-            return;
-        }
-        Ok(ship) => ship,
-    };
+    let mut ship = Ship::new(path.clone());
 
     while !rl.window_should_close() {
+        // UPDATE //
+        ship.update(&rl);
+
+        // DRAW  //
         let mut d = rl.begin_drawing(&thread);
 
         d.clear_background(Color::BLACK);
