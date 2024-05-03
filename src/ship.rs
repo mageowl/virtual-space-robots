@@ -12,7 +12,7 @@ use bean_script::{
         registry::{ModuleRegistry, RegistryFeatures},
         BuiltinModule, CustomModule,
     },
-    util::make_ref,
+    util::{make_ref, MutRc},
 };
 use raylib::{
     color::Color,
@@ -50,7 +50,7 @@ pub struct Ship {
     thread: JoinHandle<()>,
     rx: Receiver<APIRequest>,
     state: Action,
-    bullet_pool: BulletPool,
+    bullet_pool: MutRc<BulletPool>,
 }
 
 impl Ship {
@@ -59,7 +59,7 @@ impl Ship {
     const SHOOT_OFFSET: f32 = 20.0;
     const SHOOT_COOLDOWN: f32 = 1.0;
 
-    pub fn new(path: String) -> Self {
+    pub fn new(path: String, bullet_pool: MutRc<BulletPool>) -> Self {
         let (tx, rx) = mpsc::channel();
 
         let thread = thread::spawn(move || {
@@ -98,7 +98,7 @@ impl Ship {
             thread,
             rx,
             state: Action::Waiting,
-            bullet_pool: BulletPool::new(10),
+            bullet_pool,
         }
     }
 
@@ -116,6 +116,7 @@ impl Object for Ship {
                 if let Ok(msg) = received {
                     if let APIRequest::Shoot = &msg {
                         self.bullet_pool
+                            .borrow_mut()
                             .shoot(
                                 self.pos
                                     + Vector2::new(
@@ -159,8 +160,6 @@ impl Object for Ship {
                 }
             }
         }
-
-        self.bullet_pool.update(rl);
     }
     fn draw(&self, d: &mut RaylibDrawHandle, assets: &Assets) {
         d.draw_texture_pro(
@@ -171,7 +170,5 @@ impl Object for Ship {
             self.rotation,
             Color::WHITE,
         );
-
-        self.bullet_pool.draw(d, assets);
     }
 }

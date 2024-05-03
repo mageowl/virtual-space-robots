@@ -18,12 +18,13 @@ pub struct Bullet {
 
 impl Bullet {
     const SPEED: f32 = 400.0;
+    const LIFETIME: f32 = 3.0;
 
     fn new() -> Self {
         Self {
             pos: Vector2::zero(),
             rotation: 0.0,
-            lifetime: 5.0,
+            lifetime: Self::LIFETIME,
             sleep_queued: false,
         }
     }
@@ -62,7 +63,7 @@ pub struct BulletPool {
 }
 
 impl BulletPool {
-    pub fn new(count: isize) -> Self {
+    pub fn new(count: usize) -> Self {
         let mut asleep = Vec::new();
         for _ in 0..count {
             asleep.push(Bullet::new());
@@ -93,7 +94,8 @@ impl Object for BulletPool {
 
         for (i, obj) in &mut self.awake.iter_mut().enumerate() {
             obj.update(rl);
-            if obj.lifetime <= 0.0 {
+            if obj.sleep_queued {
+                obj.sleep_queued = false;
                 sleep.push(i);
             }
         }
