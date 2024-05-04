@@ -63,7 +63,7 @@ impl Object for Bullet {
 
 pub struct BulletPool {
     asleep: Vec<Bullet>,
-    awake: VecDeque<Bullet>,
+    pub awake: VecDeque<Bullet>,
 }
 
 impl BulletPool {
@@ -120,7 +120,7 @@ impl Object for BulletPool {
         self.awake.draw(d, assets)
     }
 
-    fn is_colliding(&self, other: &impl Object) -> bool {
+    fn is_colliding(&self, other: &dyn Object) -> bool {
         self.awake.is_colliding(other)
     }
     fn get_shape(&self) -> (Vector2, f32) {

@@ -45,8 +45,8 @@ impl Action {
 }
 
 pub struct Ship {
-    pos: Vector2,
-    rotation: f32,
+    pub pos: Vector2,
+    pub rotation: f32,
     thread: JoinHandle<()>,
     rx: Receiver<APIRequest>,
     state: Action,
@@ -106,6 +106,8 @@ impl Ship {
         self.state = Action::Waiting;
         self.thread.thread().unpark()
     }
+
+    pub fn raycast(&mut self, objects: &Vec<impl Object>) {}
 }
 
 impl Object for Ship {

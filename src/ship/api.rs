@@ -33,7 +33,8 @@ pub fn construct(module: &mut ModuleBuilder) {
     module
         .function("move", fn_move)
         .function("turn", fn_turn)
-        .function("shoot", fn_shoot);
+        .function("shoot", fn_shoot)
+        .function("raycast", fn_raycast);
 }
 
 fn fn_move(args: Vec<Data>, _b: Option<Function>, scope: ScopeRef) -> Result<Data, Error> {
@@ -105,6 +106,32 @@ fn fn_shoot(_a: Vec<Data>, _b: Option<Function>, scope: ScopeRef) -> Result<Data
         )
     })?;
     thread::park();
+
+    Ok(Data::None)
+}
+
+fn fn_raycast(_a: Vec<Data>, _b: Option<Function>, scope: ScopeRef) -> Result<Data, Error> {
+    let binding = RefCell::borrow(&scope).get_file_module().ok_or(Error::new(
+        "Cannot connect to api outside of module.",
+        ErrorSource::Builtin(String::from("robot_api:move")),
+    ))?;
+    let borrowed = RefCell::borrow(&binding);
+    let registry = RefCell::borrow(
+        &as_type!(borrowed => CustomModule, "Returned non-CustomModule from get_file_module")
+            .registry,
+    );
+    let raycast = registry
+        .metadata
+        .get("sender")
+        .ok_or(Error::new(
+            "Couldn't access API message sender.",
+            ErrorSource::Builtin(String::from("robot_api:[internal]")),
+        ))?
+        .downcast_ref::<Sender<APIRequest>>()
+        .ok_or(Error::new(
+            "API message sender was incorrect type.",
+            ErrorSource::Builtin(String::from("robot_api:[internal]")),
+        ));
 
     Ok(Data::None)
 }
