@@ -64,7 +64,7 @@ pub struct Ship {
 
 impl Ship {
     const MOVE_SPEED: f32 = 100.0;
-    const TURN_SPEED: f32 = 70.0;
+    const TURN_SPEED: f32 = 200.0;
     const SHOOT_OFFSET: f32 = 35.1;
     const SHOOT_COOLDOWN: f32 = 1.0;
 
@@ -130,7 +130,6 @@ impl Object for Ship {
                 let received = self.rx.try_recv();
                 if let Ok(msg) = received {
                     if let APIRequest::Shoot = &msg {
-                        dbg!(&self.rotation);
                         self.bullet_pool
                             .borrow_mut()
                             .shoot(
