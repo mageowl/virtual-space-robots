@@ -20,7 +20,6 @@ use bean_script::{
 use raylib::{
     color::Color,
     drawing::{RaylibDraw, RaylibDrawHandle},
-    get_random_value,
     math::{Rectangle, Vector2},
     RaylibHandle,
 };

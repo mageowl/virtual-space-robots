@@ -3,7 +3,7 @@
 - `robot.move(number: pixels)`
 - `robot.turn(number: degrees)`
 - `robot.shoot()`
-- `robot.raycast` = `"ship"`, `"bullet"`, `"rock"`
+- `robot.raycast` = `"ship"`, `"bullet"`, `"rock"`, `"none"`, `"wall"`
 - `robot.raycast_dist` = number in pixels
 
 # basics of bean script

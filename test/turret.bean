@@ -11,6 +11,5 @@ while: {
 	if(eq(robot.raycast, "ship")): return(false)
 }
 
-print("hello")
 robot.turn(3)
 robot.shoot()

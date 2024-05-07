@@ -1,6 +1,9 @@
 use std::collections::HashMap;
 
-use raylib::{collision, math::Vector2};
+use raylib::{
+    collision,
+    math::{Rectangle, Vector2},
+};
 
 use crate::object::Object;
 
@@ -88,7 +91,9 @@ impl CollisionFrame {
         }
 
         if dist > CollisionFrame::MAX_RAY_LENGTH {
-            (String::from("none"), -1.0)
+            (String::from("none"), dist)
+        } else if !Rectangle::new(0.0, 0.0, 1280.0, 960.0).check_collision_point_rec(pos) {
+            (String::from("wall"), dist)
         } else {
             self.raycast_step(
                 layers,

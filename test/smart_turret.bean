@@ -1,0 +1,31 @@
+use("robot_api", <robot>)
+
+while: {
+    let(<i>): 0
+    let(<max_dist>): 0
+    let(<max_angle>): 0
+    let(<continue>): true
+
+    while: {
+        if(eq(robot.raycast, "ship")): {
+            continue: false
+            robot.shoot()
+            return(false)
+        }
+        
+        if(gt(robot.raycast_dist, max_dist)): {
+            max_dist: robot.raycast_dist
+            max_angle: i
+        }
+
+        robot.turn(10)
+        i: +(i, 10)
+
+        if(eq(i, 360)):
+            return(false)
+    }
+
+    robot.turn(max_angle)
+    robot.move(-(max_dist, 50))
+    return(continue)
+}

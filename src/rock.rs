@@ -1,7 +1,6 @@
 use raylib::{
     color::Color,
     drawing::RaylibDraw,
-    get_random_value,
     math::{Rectangle, Vector2},
 };
 
