@@ -1,0 +1,5 @@
+use("robot_api", <robot>)
+
+robot.move(100)
+robot.turn(90)
+robot.shoot()

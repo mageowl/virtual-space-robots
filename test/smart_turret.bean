@@ -1,14 +1,24 @@
 use("robot_api", <robot>)
 
+fn(<turn_to>): {
+    if(lt(p(0), 180)): {
+        robot.turn(p(0))
+    } else: {
+        robot.turn(-(p(0), 360))
+    }
+}
+
+let(<last_position>): ""
+
 while: {
     let(<i>): 0
     let(<max_dist>): 0
     let(<max_angle>): 0
-    let(<continue>): true
+    let(<killed>): false
 
     while: {
         if(eq(robot.raycast, "ship")): {
-            continue: false
+            killed: true
             robot.shoot()
             return(false)
         }
@@ -25,7 +35,12 @@ while: {
             return(false)
     }
 
-    robot.turn(max_angle)
+    if(killed): return(false)
+    
+    turn_to(max_angle)
     robot.move(-(max_dist, 50))
-    return(continue)
+    turn_to(-(360, max_angle))
+
+    last_position: +(str(robot.x), ":", str(robot.y))
+    print(seen_positions)
 }

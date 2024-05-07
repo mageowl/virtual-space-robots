@@ -12,6 +12,8 @@ use bean_script::{
     scope::{function::Function, ScopeRef},
 };
 
+use super::ShipHandle;
+
 pub enum APIRequest {
     Move(f32),
     Turn(f32),
@@ -33,17 +35,17 @@ fn get_sender(registry: &ModuleRegistry) -> Result<&Sender<APIRequest>, Error> {
         ))
 }
 
-fn get_raycast_mutex(registry: &ModuleRegistry) -> Result<Arc<Mutex<(String, f32)>>, Error> {
+fn get_mutex(registry: &ModuleRegistry) -> Result<Arc<Mutex<ShipHandle>>, Error> {
     registry
         .metadata
-        .get("raycast")
+        .get("mutex")
         .ok_or(Error::new(
-            "Couldn't access API raycast mutex.",
+            "Couldn't access API mutex.",
             ErrorSource::Internal,
         ))?
-        .downcast_ref::<Arc<Mutex<(String, f32)>>>()
+        .downcast_ref::<Arc<Mutex<ShipHandle>>>()
         .ok_or(Error::new(
-            "API raycast mutex was incorrect type.",
+            "API mutex was incorrect type.",
             ErrorSource::Internal,
         ))
         .map(Arc::clone)
@@ -55,7 +57,9 @@ pub fn construct(module: &mut ModuleBuilder) {
         .function("turn", fn_turn)
         .function("shoot", fn_shoot)
         .function("raycast", fn_raycast)
-        .function("raycast_dist", fn_raycast_dist);
+        .function("raycast_dist", fn_raycast_dist)
+        .function("x", fn_x)
+        .function("y", fn_y);
 }
 
 fn fn_move(args: Vec<Data>, _b: Option<Function>, scope: ScopeRef) -> Result<Data, Error> {
@@ -140,11 +144,11 @@ fn fn_raycast(_a: Vec<Data>, _b: Option<Function>, scope: ScopeRef) -> Result<Da
             .registry,
     );
 
-    let raycast = get_raycast_mutex(&registry)
-        .trace(ErrorSource::Builtin(String::from("robot_api:raycast")))?;
-    let raycast_guard = raycast.lock().unwrap();
+    let mutex =
+        get_mutex(&registry).trace(ErrorSource::Builtin(String::from("robot_api:raycast")))?;
+    let mutex_lock = mutex.lock().unwrap();
 
-    Ok(Data::String(raycast_guard.0.clone()))
+    Ok(Data::String(mutex_lock.raycast.clone()))
 }
 
 fn fn_raycast_dist(_a: Vec<Data>, _b: Option<Function>, scope: ScopeRef) -> Result<Data, Error> {
@@ -158,9 +162,45 @@ fn fn_raycast_dist(_a: Vec<Data>, _b: Option<Function>, scope: ScopeRef) -> Resu
             .registry,
     );
 
-    let raycast = get_raycast_mutex(&registry)
-        .trace(ErrorSource::Builtin(String::from("robot_api:raycast")))?;
+    let raycast =
+        get_mutex(&registry).trace(ErrorSource::Builtin(String::from("robot_api:raycast")))?;
     let raycast_guard = raycast.lock().unwrap();
 
-    Ok(Data::Number(raycast_guard.1 as f64))
+    Ok(Data::Number(raycast_guard.raycast_dist as f64))
+}
+
+fn fn_x(_a: Vec<Data>, _b: Option<Function>, scope: ScopeRef) -> Result<Data, Error> {
+    let binding = RefCell::borrow(&scope).get_file_module().ok_or(Error::new(
+        "Cannot connect to api outside of module.",
+        ErrorSource::Builtin(String::from("robot_api:raycast")),
+    ))?;
+    let borrowed = RefCell::borrow(&binding);
+    let registry = RefCell::borrow(
+        &as_type!(borrowed => CustomModule, "Returned non-CustomModule from get_file_module")
+            .registry,
+    );
+
+    let raycast =
+        get_mutex(&registry).trace(ErrorSource::Builtin(String::from("robot_api:raycast")))?;
+    let raycast_guard = raycast.lock().unwrap();
+
+    Ok(Data::Number(raycast_guard.pos.x as f64))
+}
+
+fn fn_y(_a: Vec<Data>, _b: Option<Function>, scope: ScopeRef) -> Result<Data, Error> {
+    let binding = RefCell::borrow(&scope).get_file_module().ok_or(Error::new(
+        "Cannot connect to api outside of module.",
+        ErrorSource::Builtin(String::from("robot_api:raycast")),
+    ))?;
+    let borrowed = RefCell::borrow(&binding);
+    let registry = RefCell::borrow(
+        &as_type!(borrowed => CustomModule, "Returned non-CustomModule from get_file_module")
+            .registry,
+    );
+
+    let raycast =
+        get_mutex(&registry).trace(ErrorSource::Builtin(String::from("robot_api:raycast")))?;
+    let raycast_guard = raycast.lock().unwrap();
+
+    Ok(Data::Number(raycast_guard.pos.y as f64))
 }

@@ -51,12 +51,19 @@ impl State {
     }
 }
 
+pub struct ShipHandle {
+    raycast: String,
+    raycast_dist: f32,
+    pos: Vector2,
+}
+
 pub struct Ship {
+    name: String,
     pos: Vector2,
     rotation: f32,
     thread: JoinHandle<()>,
     rx: Receiver<APIRequest>,
-    raycast: Arc<Mutex<(String, f32)>>,
+    handle: Arc<Mutex<ShipHandle>>,
     state: State,
     bullet_pool: MutRc<BulletPool>,
 }
@@ -69,8 +76,18 @@ impl Ship {
 
     pub fn new(path: String, bullet_pool: MutRc<BulletPool>, x: f32, y: f32) -> Self {
         let (tx, rx) = mpsc::channel();
-        let raycast = Arc::new(Mutex::new((String::from("none"), -1.0)));
-        let raycast_handle = Arc::clone(&raycast);
+        let handle = Arc::new(Mutex::new(ShipHandle {
+            raycast: String::from("none"),
+            raycast_dist: -1.0,
+            pos: Vector2::new(x, y),
+        }));
+        let handle_read = Arc::clone(&handle);
+        let name = PathBuf::from(path.clone())
+            .file_stem()
+            .unwrap()
+            .to_str()
+            .unwrap()
+            .to_string();
 
         let thread = thread::spawn(move || {
             let file = fs::read_to_string(path.clone()).expect("Failed to open file");
@@ -84,7 +101,7 @@ impl Ship {
                 .insert(String::from("sender"), Box::new(tx));
             registry
                 .metadata
-                .insert(String::from("raycast"), Box::new(raycast_handle));
+                .insert(String::from("mutex"), Box::new(handle_read));
             registry.register_initialized_builtin(
                 String::from("robot_api"),
                 BuiltinModule::new(api::construct, registry.features),
@@ -102,11 +119,12 @@ impl Ship {
         });
 
         Self {
+            name,
             pos: Vector2::new(x, y),
             rotation: 0.0,
             thread,
             rx,
-            raycast,
+            handle,
             state: State::Waiting,
             bullet_pool,
         }
@@ -115,6 +133,25 @@ impl Ship {
     fn next(&mut self) {
         self.state = State::Waiting;
         self.thread.thread().unpark()
+    }
+
+    fn make_handle(&self, collision_frame: &CollisionFrame) -> ShipHandle {
+        let (raycast, raycast_dist) = collision_frame.raycast(
+            vec!["ship", "rock"],
+            self.pos
+                + Vector2::new(
+                    self.rotation.to_radians().cos(),
+                    self.rotation.to_radians().sin(),
+                ) * Self::SHOOT_OFFSET,
+            self.rotation,
+            20.0,
+        );
+
+        ShipHandle {
+            raycast,
+            raycast_dist,
+            pos: self.pos,
+        }
     }
 }
 
@@ -176,17 +213,8 @@ impl Object for Ship {
         if collision_frame.check_collision(vec!["bullet", "rock"], self.get_shape()) {
             self.state = State::Destroyed;
         } else {
-            let mut raycast_lock = self.raycast.lock().unwrap();
-            *raycast_lock = collision_frame.raycast(
-                vec!["ship", "rock"],
-                self.pos
-                    + Vector2::new(
-                        self.rotation.to_radians().cos(),
-                        self.rotation.to_radians().sin(),
-                    ) * Self::SHOOT_OFFSET,
-                self.rotation,
-                15.0,
-            );
+            let mut raycast_lock = self.handle.lock().unwrap();
+            *raycast_lock = self.make_handle(collision_frame);
             drop(raycast_lock);
 
             if should_unpark {
@@ -215,6 +243,13 @@ impl Object for Ship {
                 Color::WHITE,
             );
         }
+        d.draw_text(
+            &self.name,
+            self.pos.x as i32 - 50,
+            self.pos.y as i32 - 50,
+            18,
+            Color::GREEN,
+        )
     }
 
     fn get_shape(&self) -> Circle {
