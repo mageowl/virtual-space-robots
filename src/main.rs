@@ -2,12 +2,14 @@ use std::env;
 
 use bean_script::util::make_ref;
 use bullet::BulletPool;
+use collision::{CollisionFrame, CollisionLayer};
 use object::Object;
 use raylib::prelude::*;
 use ship::Ship;
 
 mod assets;
 mod bullet;
+mod collision;
 mod object;
 mod ship;
 
@@ -27,9 +29,13 @@ fn main() {
 
     while !rl.window_should_close() {
         // UPDATE //
-        ships.update(&rl);
-        bullet_pool.borrow_mut().update(&rl);
-        bullet_pool.borrow_mut().collide(&ships);
+        let collision_frame = CollisionFrame::new(vec![
+            ("ship", CollisionLayer::from(&ships)),
+            ("bullet", bullet_pool.borrow_mut().collision_layer()),
+        ]);
+
+        ships.update(&rl, &collision_frame);
+        bullet_pool.borrow_mut().update(&rl, &collision_frame);
 
         // DRAW  //
         let mut d = rl.begin_drawing(&thread);

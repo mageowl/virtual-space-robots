@@ -2,24 +2,31 @@ use std::collections::VecDeque;
 
 use raylib::{collision, drawing::RaylibDrawHandle, math::Vector2, RaylibHandle};
 
-use crate::assets::Assets;
+use crate::{
+    assets::Assets,
+    collision::{Circle, CollisionFrame},
+};
 
 pub trait Object {
-    fn update(&mut self, rl: &RaylibHandle);
+    fn update(&mut self, rl: &RaylibHandle, collision_frame: &CollisionFrame);
     fn draw(&self, d: &mut RaylibDrawHandle, assets: &Assets);
-    fn get_shape(&self) -> (Vector2, f32);
+    fn get_shape(&self) -> Circle;
 
     fn is_colliding(&self, other: &dyn Object) -> bool {
         let shape1 = self.get_shape();
         let shape2 = other.get_shape();
         collision::check_collision_circles(shape1.0, shape1.1, shape2.0, shape2.1)
     }
+
+    fn is_collection(&self) -> bool {
+        false
+    }
 }
 
 impl<T: Object> Object for Vec<T> {
-    fn update(&mut self, rl: &RaylibHandle) {
+    fn update(&mut self, rl: &RaylibHandle, collision_frame: &CollisionFrame) {
         for obj in self {
-            obj.update(rl);
+            obj.update(rl, collision_frame);
         }
     }
     fn draw(&self, d: &mut RaylibDrawHandle, assets: &Assets) {
@@ -31,15 +38,19 @@ impl<T: Object> Object for Vec<T> {
         self.iter().any(|obj| obj.is_colliding(other))
     }
 
-    fn get_shape(&self) -> (Vector2, f32) {
+    fn get_shape(&self) -> Circle {
         (Vector2::zero(), 0.0)
+    }
+
+    fn is_collection(&self) -> bool {
+        true
     }
 }
 
 impl<T: Object> Object for VecDeque<T> {
-    fn update(&mut self, rl: &RaylibHandle) {
+    fn update(&mut self, rl: &RaylibHandle, collision_frame: &CollisionFrame) {
         for obj in self {
-            obj.update(rl);
+            obj.update(rl, collision_frame);
         }
     }
     fn draw(&self, d: &mut RaylibDrawHandle, assets: &Assets) {
@@ -51,7 +62,11 @@ impl<T: Object> Object for VecDeque<T> {
         self.iter().any(|obj| obj.is_colliding(other))
     }
 
-    fn get_shape(&self) -> (Vector2, f32) {
+    fn get_shape(&self) -> Circle {
         (Vector2::zero(), 0.0)
+    }
+
+    fn is_collection(&self) -> bool {
+        true
     }
 }

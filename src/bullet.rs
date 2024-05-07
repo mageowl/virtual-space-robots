@@ -7,7 +7,11 @@ use raylib::{
     prelude::{RaylibDrawHandle, RaylibHandle},
 };
 
-use crate::{assets::Assets, object::Object};
+use crate::{
+    assets::Assets,
+    collision::{Circle, CollisionFrame, CollisionLayer},
+    object::Object,
+};
 
 pub struct Bullet {
     pos: Vector2,
@@ -31,8 +35,12 @@ impl Bullet {
 }
 
 impl Object for Bullet {
-    fn update(&mut self, rl: &RaylibHandle) {
+    fn update(&mut self, rl: &RaylibHandle, collision_frame: &CollisionFrame) {
         self.lifetime -= rl.get_frame_time();
+
+        if collision_frame.check_collision(vec!["ship"], self.get_shape()) {
+            self.sleep_queued = true
+        }
 
         self.pos += Vector2::new(
             self.rotation.to_radians().sin(),
@@ -56,7 +64,7 @@ impl Object for Bullet {
         );
     }
 
-    fn get_shape(&self) -> (Vector2, f32) {
+    fn get_shape(&self) -> Circle {
         (self.pos, 10.0)
     }
 }
@@ -91,26 +99,25 @@ impl BulletPool {
         Ok(())
     }
 
-    pub fn collide(&mut self, other: &impl Object) {
-        for bullet in &mut self.awake {
-            if other.is_colliding(bullet) {
-                bullet.sleep_queued = true
-            }
-        }
+    pub fn collision_layer(&mut self) -> CollisionLayer {
+        CollisionLayer::from(self.awake.make_contiguous())
     }
 }
 
 impl Object for BulletPool {
-    fn update(&mut self, rl: &RaylibHandle) {
+    fn update(&mut self, rl: &RaylibHandle, collision_frame: &CollisionFrame) {
         let mut sleep = Vec::new();
 
-        for (i, obj) in &mut self.awake.iter_mut().enumerate() {
-            obj.update(rl);
+        for (i, obj) in self.awake.iter_mut().enumerate() {
+            obj.update(rl, collision_frame);
             if obj.sleep_queued {
                 obj.sleep_queued = false;
                 sleep.push(i);
             }
         }
+
+        sleep.sort_unstable();
+        sleep.reverse();
         for i in sleep {
             self.asleep.push(self.awake.remove(i).unwrap());
         }
@@ -123,7 +130,7 @@ impl Object for BulletPool {
     fn is_colliding(&self, other: &dyn Object) -> bool {
         self.awake.is_colliding(other)
     }
-    fn get_shape(&self) -> (Vector2, f32) {
+    fn get_shape(&self) -> Circle {
         (Vector2::zero(), 0.0)
     }
 }

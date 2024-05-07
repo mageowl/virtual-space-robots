@@ -23,11 +23,17 @@ use raylib::{
 };
 
 use self::api::APIRequest;
-use crate::{assets::Assets, bullet::BulletPool, object::Object};
+use crate::{
+    assets::Assets,
+    bullet::BulletPool,
+    collision::{Circle, CollisionFrame},
+    object::Object,
+};
 
 mod api;
 
 enum Action {
+    Destroyed,
     Waiting,
     Moving(f32),
     Turning(f32),
@@ -45,8 +51,8 @@ impl Action {
 }
 
 pub struct Ship {
-    pub pos: Vector2,
-    pub rotation: f32,
+    pos: Vector2,
+    rotation: f32,
     thread: JoinHandle<()>,
     rx: Receiver<APIRequest>,
     state: Action,
@@ -90,7 +96,8 @@ impl Ship {
 
         Self {
             pos: (
-                get_random_value::<i64>(80, 1200) as f32,
+                // get_random_value::<i64>(80, 1200) as f32,
+                50.0,
                 get_random_value::<i64>(80, 880) as f32,
             )
                 .into(),
@@ -106,12 +113,10 @@ impl Ship {
         self.state = Action::Waiting;
         self.thread.thread().unpark()
     }
-
-    pub fn raycast(&mut self, objects: &Vec<impl Object>) {}
 }
 
 impl Object for Ship {
-    fn update(&mut self, rl: &RaylibHandle) {
+    fn update(&mut self, rl: &RaylibHandle, collision_frame: &CollisionFrame) {
         match &self.state {
             Action::Waiting => {
                 let received = self.rx.try_recv();
@@ -161,21 +166,30 @@ impl Object for Ship {
                     self.next();
                 }
             }
+            Action::Destroyed => return,
+        }
+
+        if collision_frame.check_collision(vec!["bullet", "rock"], self.get_shape()) {
+            self.state = Action::Destroyed;
         }
     }
 
     fn draw(&self, d: &mut RaylibDrawHandle, assets: &Assets) {
-        d.draw_texture_pro(
-            &assets.ship,
-            Rectangle::new(0.0, 0.0, 50.0, 50.0),
-            Rectangle::new(self.pos.x, self.pos.y, 50.0, 50.0),
-            Vector2::new(25.0, 25.0),
-            self.rotation,
-            Color::WHITE,
-        );
+        if let Action::Destroyed = self.state {
+            ()
+        } else {
+            d.draw_texture_pro(
+                &assets.ship,
+                Rectangle::new(0.0, 0.0, 50.0, 50.0),
+                Rectangle::new(self.pos.x, self.pos.y, 50.0, 50.0),
+                Vector2::new(25.0, 25.0),
+                self.rotation,
+                Color::WHITE,
+            );
+        }
     }
 
-    fn get_shape(&self) -> (Vector2, f32) {
+    fn get_shape(&self) -> Circle {
         (self.pos, 20.0)
     }
 }
