@@ -54,7 +54,8 @@ pub fn construct(module: &mut ModuleBuilder) {
         .function("move", fn_move)
         .function("turn", fn_turn)
         .function("shoot", fn_shoot)
-        .function("raycast", fn_raycast);
+        .function("raycast", fn_raycast)
+        .function("raycast_dist", fn_raycast_dist);
 }
 
 fn fn_move(args: Vec<Data>, _b: Option<Function>, scope: ScopeRef) -> Result<Data, Error> {
