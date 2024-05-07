@@ -1,4 +1,8 @@
-use std::{cell::RefCell, sync::mpsc::Sender, thread};
+use std::{
+    cell::RefCell,
+    sync::{mpsc::Sender, Arc, Mutex},
+    thread,
+};
 
 use bean_script::{
     arg_check, as_type,
@@ -20,13 +24,29 @@ fn get_sender(registry: &ModuleRegistry) -> Result<&Sender<APIRequest>, Error> {
         .get("sender")
         .ok_or(Error::new(
             "Couldn't access API message sender.",
-            ErrorSource::Builtin(String::from("robot_api:[internal]")),
+            ErrorSource::Internal,
         ))?
         .downcast_ref::<Sender<APIRequest>>()
         .ok_or(Error::new(
             "API message sender was incorrect type.",
-            ErrorSource::Builtin(String::from("robot_api:[internal]")),
+            ErrorSource::Internal,
         ))
+}
+
+fn get_raycast_mutex(registry: &ModuleRegistry) -> Result<Arc<Mutex<(String, f32)>>, Error> {
+    registry
+        .metadata
+        .get("raycast")
+        .ok_or(Error::new(
+            "Couldn't access API raycast mutex.",
+            ErrorSource::Internal,
+        ))?
+        .downcast_ref::<Arc<Mutex<(String, f32)>>>()
+        .ok_or(Error::new(
+            "API raycast mutex was incorrect type.",
+            ErrorSource::Internal,
+        ))
+        .map(Arc::clone)
 }
 
 pub fn construct(module: &mut ModuleBuilder) {
@@ -62,10 +82,10 @@ fn fn_move(args: Vec<Data>, _b: Option<Function>, scope: ScopeRef) -> Result<Dat
 }
 
 fn fn_turn(args: Vec<Data>, _b: Option<Function>, scope: ScopeRef) -> Result<Data, Error> {
-    arg_check!(args[0] => Data::Number(d), "Expected a number, but instead got a {}.", "robot_api:move");
+    arg_check!(args[0] => Data::Number(d), "Expected a number, but instead got a {}.", "robot_api:turn");
     let binding = RefCell::borrow(&scope).get_file_module().ok_or(Error::new(
         "Cannot connect to api outside of module.",
-        ErrorSource::Builtin(String::from("robot_api:move")),
+        ErrorSource::Builtin(String::from("robot_api:turn")),
     ))?;
     let borrowed = RefCell::borrow(&binding);
     let registry = RefCell::borrow(
@@ -73,15 +93,13 @@ fn fn_turn(args: Vec<Data>, _b: Option<Function>, scope: ScopeRef) -> Result<Dat
             .registry,
     );
     let sender =
-        get_sender(&registry).trace(ErrorSource::Builtin(String::from("robot_api:move")))?;
-    sender
-        .send(APIRequest::Turn((d * 360.0) as f32))
-        .map_err(|_| {
-            Error::new(
-                "Failed to send API request.",
-                ErrorSource::Builtin(String::from("robot_api:move")),
-            )
-        })?;
+        get_sender(&registry).trace(ErrorSource::Builtin(String::from("robot_api:turn")))?;
+    sender.send(APIRequest::Turn(d as f32)).map_err(|_| {
+        Error::new(
+            "Failed to send API request.",
+            ErrorSource::Builtin(String::from("robot_api:turn")),
+        )
+    })?;
     thread::park();
 
     Ok(Data::None)
@@ -90,7 +108,7 @@ fn fn_turn(args: Vec<Data>, _b: Option<Function>, scope: ScopeRef) -> Result<Dat
 fn fn_shoot(_a: Vec<Data>, _b: Option<Function>, scope: ScopeRef) -> Result<Data, Error> {
     let binding = RefCell::borrow(&scope).get_file_module().ok_or(Error::new(
         "Cannot connect to api outside of module.",
-        ErrorSource::Builtin(String::from("robot_api:move")),
+        ErrorSource::Builtin(String::from("robot_api:shoot")),
     ))?;
     let borrowed = RefCell::borrow(&binding);
     let registry = RefCell::borrow(
@@ -98,11 +116,11 @@ fn fn_shoot(_a: Vec<Data>, _b: Option<Function>, scope: ScopeRef) -> Result<Data
             .registry,
     );
     let sender =
-        get_sender(&registry).trace(ErrorSource::Builtin(String::from("robot_api:move")))?;
+        get_sender(&registry).trace(ErrorSource::Builtin(String::from("robot_api:shoot")))?;
     sender.send(APIRequest::Shoot).map_err(|_| {
         Error::new(
             "Failed to send API request.",
-            ErrorSource::Builtin(String::from("robot_api:move")),
+            ErrorSource::Builtin(String::from("robot_api:shoot")),
         )
     })?;
     thread::park();
@@ -113,25 +131,35 @@ fn fn_shoot(_a: Vec<Data>, _b: Option<Function>, scope: ScopeRef) -> Result<Data
 fn fn_raycast(_a: Vec<Data>, _b: Option<Function>, scope: ScopeRef) -> Result<Data, Error> {
     let binding = RefCell::borrow(&scope).get_file_module().ok_or(Error::new(
         "Cannot connect to api outside of module.",
-        ErrorSource::Builtin(String::from("robot_api:move")),
+        ErrorSource::Builtin(String::from("robot_api:raycast_dist")),
     ))?;
     let borrowed = RefCell::borrow(&binding);
     let registry = RefCell::borrow(
         &as_type!(borrowed => CustomModule, "Returned non-CustomModule from get_file_module")
             .registry,
     );
-    let raycast = registry
-        .metadata
-        .get("sender")
-        .ok_or(Error::new(
-            "Couldn't access API message sender.",
-            ErrorSource::Builtin(String::from("robot_api:[internal]")),
-        ))?
-        .downcast_ref::<Sender<APIRequest>>()
-        .ok_or(Error::new(
-            "API message sender was incorrect type.",
-            ErrorSource::Builtin(String::from("robot_api:[internal]")),
-        ));
 
-    Ok(Data::None)
+    let raycast = get_raycast_mutex(&registry)
+        .trace(ErrorSource::Builtin(String::from("robot_api:raycast")))?;
+    let raycast_guard = raycast.lock().unwrap();
+
+    Ok(Data::String(raycast_guard.0.clone()))
+}
+
+fn fn_raycast_dist(_a: Vec<Data>, _b: Option<Function>, scope: ScopeRef) -> Result<Data, Error> {
+    let binding = RefCell::borrow(&scope).get_file_module().ok_or(Error::new(
+        "Cannot connect to api outside of module.",
+        ErrorSource::Builtin(String::from("robot_api:raycast")),
+    ))?;
+    let borrowed = RefCell::borrow(&binding);
+    let registry = RefCell::borrow(
+        &as_type!(borrowed => CustomModule, "Returned non-CustomModule from get_file_module")
+            .registry,
+    );
+
+    let raycast = get_raycast_mutex(&registry)
+        .trace(ErrorSource::Builtin(String::from("robot_api:raycast")))?;
+    let raycast_guard = raycast.lock().unwrap();
+
+    Ok(Data::Number(raycast_guard.1 as f64))
 }

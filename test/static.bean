@@ -1,3 +1,0 @@
-use("robot_api", <robot>)
-
-robot.shoot

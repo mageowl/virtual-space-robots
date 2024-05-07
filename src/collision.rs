@@ -38,6 +38,8 @@ pub struct CollisionFrame {
 }
 
 impl CollisionFrame {
+    const MAX_RAY_LENGTH: f32 = 1000.0;
+
     pub fn new(layers: Vec<(&'static str, CollisionLayer)>) -> Self {
         CollisionFrame {
             layers: layers.into_iter().collect(),
@@ -54,5 +56,48 @@ impl CollisionFrame {
             }
         }
         false
+    }
+
+    pub fn raycast(
+        &self,
+        layers: Vec<&str>,
+        pos: Vector2,
+        rotation: f32,
+        radius: f32,
+    ) -> (String, f32) {
+        self.raycast_step(layers, pos, rotation, radius, 0.0)
+    }
+
+    fn raycast_step(
+        &self,
+        layers: Vec<&str>,
+        pos: Vector2,
+        rotation: f32,
+        radius: f32,
+        dist: f32,
+    ) -> (String, f32) {
+        let mut mut_layers = layers.clone();
+        while !mut_layers.is_empty() {
+            let name = mut_layers.pop().unwrap();
+            let Some(layer) = self.layers.get(name) else {
+                continue;
+            };
+            if layer.check_collision((pos, radius)) {
+                return (String::from(name), dist + radius);
+            }
+        }
+
+        if dist > CollisionFrame::MAX_RAY_LENGTH {
+            (String::from("none"), -1.0)
+        } else {
+            self.raycast_step(
+                layers,
+                pos + Vector2::new(rotation.to_radians().cos(), rotation.to_radians().sin())
+                    * radius,
+                rotation,
+                radius,
+                dist + radius,
+            )
+        }
     }
 }

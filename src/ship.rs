@@ -2,7 +2,10 @@ use std::{
     fs,
     path::PathBuf,
     rc::Rc,
-    sync::mpsc::{self, Receiver},
+    sync::{
+        mpsc::{self, Receiver},
+        Arc, Mutex,
+    },
     thread::{self, JoinHandle},
 };
 
@@ -31,8 +34,7 @@ use crate::{
 };
 
 mod api;
-
-enum Action {
+enum State {
     Destroyed,
     Waiting,
     Moving(f32),
@@ -40,12 +42,12 @@ enum Action {
     Shooting(f32),
 }
 
-impl Action {
+impl State {
     fn from_req(req: APIRequest) -> Self {
         match req {
-            APIRequest::Move(dist) => Action::Moving(dist),
-            APIRequest::Turn(dist) => Action::Turning(dist),
-            APIRequest::Shoot => Action::Shooting(Ship::SHOOT_COOLDOWN),
+            APIRequest::Move(dist) => State::Moving(dist),
+            APIRequest::Turn(dist) => State::Turning(dist),
+            APIRequest::Shoot => State::Shooting(Ship::SHOOT_COOLDOWN),
         }
     }
 }
@@ -55,7 +57,8 @@ pub struct Ship {
     rotation: f32,
     thread: JoinHandle<()>,
     rx: Receiver<APIRequest>,
-    state: Action,
+    raycast: Arc<Mutex<(String, f32)>>,
+    state: State,
     bullet_pool: MutRc<BulletPool>,
 }
 
@@ -67,6 +70,8 @@ impl Ship {
 
     pub fn new(path: String, bullet_pool: MutRc<BulletPool>) -> Self {
         let (tx, rx) = mpsc::channel();
+        let raycast = Arc::new(Mutex::new((String::from("none"), -1.0)));
+        let raycast_handle = Arc::clone(&raycast);
 
         let thread = thread::spawn(move || {
             let file = fs::read_to_string(path.clone()).expect("Failed to open file");
@@ -78,6 +83,9 @@ impl Ship {
             registry
                 .metadata
                 .insert(String::from("sender"), Box::new(tx));
+            registry
+                .metadata
+                .insert(String::from("raycast"), Box::new(raycast_handle));
             registry.register_initialized_builtin(
                 String::from("robot_api"),
                 BuiltinModule::new(api::construct, registry.features),
@@ -95,95 +103,120 @@ impl Ship {
         });
 
         Self {
-            pos: (
-                // get_random_value::<i64>(80, 1200) as f32,
-                50.0,
+            pos: Vector2::new(
+                get_random_value::<i64>(80, 1200) as f32,
                 get_random_value::<i64>(80, 880) as f32,
-            )
-                .into(),
+            ),
             rotation: 0.0,
             thread,
             rx,
-            state: Action::Waiting,
+            raycast,
+            state: State::Waiting,
             bullet_pool,
         }
     }
 
     fn next(&mut self) {
-        self.state = Action::Waiting;
+        self.state = State::Waiting;
         self.thread.thread().unpark()
     }
 }
 
 impl Object for Ship {
     fn update(&mut self, rl: &RaylibHandle, collision_frame: &CollisionFrame) {
+        let mut should_unpark = false;
         match &self.state {
-            Action::Waiting => {
+            State::Waiting => {
                 let received = self.rx.try_recv();
                 if let Ok(msg) = received {
                     if let APIRequest::Shoot = &msg {
+                        dbg!(&self.rotation);
                         self.bullet_pool
                             .borrow_mut()
                             .shoot(
                                 self.pos
                                     + Vector2::new(
-                                        self.rotation.to_radians().sin(),
                                         self.rotation.to_radians().cos(),
+                                        self.rotation.to_radians().sin(),
                                     ) * Self::SHOOT_OFFSET,
                                 self.rotation,
                             )
                             .unwrap();
                     }
-                    self.state = Action::from_req(msg);
+                    self.state = State::from_req(msg);
                 }
             }
-            Action::Moving(dist) => {
+            State::Moving(dist) => {
                 let dist_moved = dist.abs().min(Self::MOVE_SPEED * rl.get_frame_time());
                 self.pos += Vector2::new(
-                    self.rotation.to_radians().sin(),
                     self.rotation.to_radians().cos(),
+                    self.rotation.to_radians().sin(),
                 ) * dist_moved
                     * dist.signum();
                 if dist_moved < dist.abs() {
-                    self.state = Action::Moving(dist - dist_moved * dist.signum());
+                    self.state = State::Moving(dist - dist_moved * dist.signum());
                 } else {
-                    self.next();
+                    should_unpark = true;
                 }
             }
-            Action::Turning(dist) => {
+            State::Turning(dist) => {
                 let dist_moved = dist.abs().min(Self::TURN_SPEED * rl.get_frame_time());
                 self.rotation += dist_moved * dist.signum();
                 if dist_moved < dist.abs() {
-                    self.state = Action::Turning(dist - dist_moved * dist.signum());
+                    self.state = State::Turning(dist - dist_moved * dist.signum());
                 } else {
-                    self.next();
+                    should_unpark = true;
                 }
             }
-            Action::Shooting(cooldown) => {
+            State::Shooting(cooldown) => {
                 if rl.get_frame_time() < *cooldown {
-                    self.state = Action::Shooting(cooldown - rl.get_frame_time())
+                    self.state = State::Shooting(cooldown - rl.get_frame_time())
                 } else {
-                    self.next();
+                    should_unpark = true;
                 }
             }
-            Action::Destroyed => return,
+            State::Destroyed => return,
         }
 
         if collision_frame.check_collision(vec!["bullet", "rock"], self.get_shape()) {
-            self.state = Action::Destroyed;
+            self.state = State::Destroyed;
+        } else {
+            let mut raycast_lock = self.raycast.lock().unwrap();
+            *raycast_lock = collision_frame.raycast(
+                vec!["ship", "rock"],
+                self.pos
+                    + Vector2::new(
+                        self.rotation.to_radians().cos(),
+                        self.rotation.to_radians().sin(),
+                    ) * Self::SHOOT_OFFSET,
+                self.rotation,
+                10.0,
+            );
+            drop(raycast_lock);
+
+            if should_unpark {
+                self.next();
+            }
         }
     }
 
     fn draw(&self, d: &mut RaylibDrawHandle, assets: &Assets) {
-        if let Action::Destroyed = self.state {
-            ()
+        if let State::Destroyed = self.state {
+            d.draw_texture_pro(
+                &assets.ship_dead,
+                Rectangle::new(0.0, 0.0, 50.0, 50.0),
+                Rectangle::new(self.pos.x, self.pos.y, 50.0, 50.0),
+                Vector2::new(25.0, 25.0),
+                self.rotation + 90.0,
+                Color::WHITE,
+            );
         } else {
             d.draw_texture_pro(
                 &assets.ship,
                 Rectangle::new(0.0, 0.0, 50.0, 50.0),
                 Rectangle::new(self.pos.x, self.pos.y, 50.0, 50.0),
                 Vector2::new(25.0, 25.0),
-                self.rotation,
+                self.rotation + 90.0,
                 Color::WHITE,
             );
         }

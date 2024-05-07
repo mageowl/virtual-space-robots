@@ -43,8 +43,8 @@ impl Object for Bullet {
         }
 
         self.pos += Vector2::new(
-            self.rotation.to_radians().sin(),
             self.rotation.to_radians().cos(),
+            self.rotation.to_radians().sin(),
         ) * Self::SPEED
             * rl.get_frame_time();
 
@@ -59,7 +59,7 @@ impl Object for Bullet {
             Rectangle::new(0.0, 0.0, 50.0, 50.0),
             Rectangle::new(self.pos.x, self.pos.y, 50.0, 50.0),
             Vector2::new(25.0, 25.0),
-            self.rotation,
+            self.rotation + 90.0,
             Color::RED,
         );
     }
