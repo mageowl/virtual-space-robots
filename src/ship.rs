@@ -68,7 +68,7 @@ impl Ship {
     const SHOOT_OFFSET: f32 = 40.1;
     const SHOOT_COOLDOWN: f32 = 1.0;
 
-    pub fn new(path: String, bullet_pool: MutRc<BulletPool>) -> Self {
+    pub fn new(path: String, bullet_pool: MutRc<BulletPool>, x: f32, y: f32) -> Self {
         let (tx, rx) = mpsc::channel();
         let raycast = Arc::new(Mutex::new((String::from("none"), -1.0)));
         let raycast_handle = Arc::clone(&raycast);
@@ -103,10 +103,7 @@ impl Ship {
         });
 
         Self {
-            pos: Vector2::new(
-                get_random_value::<i64>(80, 1200) as f32,
-                get_random_value::<i64>(80, 880) as f32,
-            ),
+            pos: Vector2::new(x, y),
             rotation: 0.0,
             thread,
             rx,
@@ -189,7 +186,7 @@ impl Object for Ship {
                         self.rotation.to_radians().sin(),
                     ) * Self::SHOOT_OFFSET,
                 self.rotation,
-                10.0,
+                15.0,
             );
             drop(raycast_lock);
 

@@ -24,11 +24,50 @@ fn main() {
 
     let args = env::args();
     let bullet_pool = make_ref(BulletPool::new(10 * args.len()));
+
+    let mut positions: Vec<(f32, f32)> = Vec::new();
+    let mut rocks: Vec<Rock> = (0..get_random_value(13, 16))
+        .map(|_| {
+            let mut pos = (
+                get_random_value::<i64>(80, 1200) as f32,
+                get_random_value::<i64>(80, 880) as f32,
+            );
+            while positions
+                .iter()
+                .any(|(x, y)| (pos.0 - x).abs() + (pos.1 - y).abs() < 200.0)
+            {
+                pos = (
+                    get_random_value::<i64>(80, 1200) as f32,
+                    get_random_value::<i64>(80, 880) as f32,
+                );
+            }
+
+            positions.push(pos);
+            Rock::new(pos.0, pos.1)
+        })
+        .collect();
+
     let mut ships: Vec<Ship> = args
         .skip(1)
-        .map(|p| Ship::new(p, bullet_pool.clone()))
+        .map(|p| {
+            let mut pos = (
+                get_random_value::<i64>(80, 1200) as f32,
+                get_random_value::<i64>(80, 880) as f32,
+            );
+            while positions
+                .iter()
+                .any(|(x, y)| (pos.0 - x).abs() + (pos.1 - y).abs() < 200.0)
+            {
+                pos = (
+                    get_random_value::<i64>(80, 1200) as f32,
+                    get_random_value::<i64>(80, 880) as f32,
+                );
+            }
+
+            positions.push(pos);
+            Ship::new(p, bullet_pool.clone(), pos.0, pos.1)
+        })
         .collect();
-    let mut rocks: Vec<Rock> = (0..get_random_value(3, 4)).map(|_| Rock::new()).collect();
 
     while !rl.window_should_close() {
         // UPDATE //

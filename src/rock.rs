@@ -13,12 +13,9 @@ pub struct Rock {
 }
 
 impl Rock {
-    pub fn new() -> Self {
+    pub fn new(x: f32, y: f32) -> Self {
         Self {
-            pos: Vector2::new(
-                get_random_value::<i64>(80, 1200) as f32,
-                get_random_value::<i64>(80, 880) as f32,
-            ),
+            pos: Vector2::new(x, y),
             hp: 2,
         }
     }

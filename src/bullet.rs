@@ -88,7 +88,6 @@ impl BulletPool {
     }
 
     pub fn shoot(&mut self, pos: Vector2, rotation: f32) -> Result<(), String> {
-        println!("bullets left: {}", self.asleep.len());
         let mut bullet = self
             .asleep
             .pop()
@@ -114,7 +113,6 @@ impl Object for BulletPool {
             if obj.sleep_queued {
                 obj.sleep_queued = false;
                 obj.lifetime = Bullet::LIFETIME;
-                println!("sleeping obj");
                 sleep.push(i);
             }
         }
