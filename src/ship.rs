@@ -64,8 +64,8 @@ pub struct Ship {
 
 impl Ship {
     const MOVE_SPEED: f32 = 100.0;
-    const TURN_SPEED: f32 = 200.0;
-    const SHOOT_OFFSET: f32 = 35.1;
+    const TURN_SPEED: f32 = 360.0;
+    const SHOOT_OFFSET: f32 = 40.1;
     const SHOOT_COOLDOWN: f32 = 1.0;
 
     pub fn new(path: String, bullet_pool: MutRc<BulletPool>) -> Self {
@@ -222,6 +222,10 @@ impl Object for Ship {
     }
 
     fn get_shape(&self) -> Circle {
-        (self.pos, 20.0)
+        if let State::Destroyed = &self.state {
+            (Vector2::zero(), 0.0)
+        } else {
+            (self.pos, 20.0)
+        }
     }
 }

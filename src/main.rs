@@ -5,12 +5,14 @@ use bullet::BulletPool;
 use collision::{CollisionFrame, CollisionLayer};
 use object::Object;
 use raylib::prelude::*;
+use rock::Rock;
 use ship::Ship;
 
 mod assets;
 mod bullet;
 mod collision;
 mod object;
+mod rock;
 mod ship;
 
 fn main() {
@@ -26,15 +28,18 @@ fn main() {
         .skip(1)
         .map(|p| Ship::new(p, bullet_pool.clone()))
         .collect();
+    let mut rocks: Vec<Rock> = (0..get_random_value(3, 4)).map(|_| Rock::new()).collect();
 
     while !rl.window_should_close() {
         // UPDATE //
         let collision_frame = CollisionFrame::new(vec![
             ("ship", CollisionLayer::from(&ships)),
             ("bullet", bullet_pool.borrow_mut().collision_layer()),
+            ("rock", CollisionLayer::from(&rocks)),
         ]);
 
         ships.update(&rl, &collision_frame);
+        rocks.update(&rl, &collision_frame);
         bullet_pool.borrow_mut().update(&rl, &collision_frame);
 
         // DRAW  //
@@ -42,6 +47,7 @@ fn main() {
 
         d.clear_background(Color::BLACK);
         ships.draw(&mut d, &assets);
+        rocks.draw(&mut d, &assets);
         bullet_pool.borrow().draw(&mut d, &assets);
     }
 }

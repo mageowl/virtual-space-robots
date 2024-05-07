@@ -1,7 +1,16 @@
 use("robot_api", <robot>)
 
 while: {
-	if(eq(robot.raycast, "ship")): return(false)
+	if(eq(robot.raycast, "rock")): {
+		robot.turn(5)
+		robot.shoot()
+		robot.shoot()
+		sleep(100)
+	}
 	robot.turn(3)
+	if(eq(robot.raycast, "ship")): return(false)
 }
+
+print("hello")
+robot.turn(3)
 robot.shoot()

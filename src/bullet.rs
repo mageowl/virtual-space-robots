@@ -38,7 +38,7 @@ impl Object for Bullet {
     fn update(&mut self, rl: &RaylibHandle, collision_frame: &CollisionFrame) {
         self.lifetime -= rl.get_frame_time();
 
-        if collision_frame.check_collision(vec!["ship"], self.get_shape()) {
+        if collision_frame.check_collision(vec!["ship", "rock"], self.get_shape()) {
             self.sleep_queued = true
         }
 
@@ -88,6 +88,7 @@ impl BulletPool {
     }
 
     pub fn shoot(&mut self, pos: Vector2, rotation: f32) -> Result<(), String> {
+        println!("bullets left: {}", self.asleep.len());
         let mut bullet = self
             .asleep
             .pop()
@@ -112,6 +113,8 @@ impl Object for BulletPool {
             obj.update(rl, collision_frame);
             if obj.sleep_queued {
                 obj.sleep_queued = false;
+                obj.lifetime = Bullet::LIFETIME;
+                println!("sleeping obj");
                 sleep.push(i);
             }
         }
