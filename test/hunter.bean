@@ -20,15 +20,16 @@ fn(<move>): {
 
         if(eq(robot.raycast, "ship")): {
             robot.shoot()
-            sleep(300)
+            robot.turn(10)
             move(-(robot.raycast_dist, 100))
             super.return(false)
         }
         if(eq(robot.raycast, "bullet")): {
             robot.shoot()
+            robot.turn(5)
         }
 
-        return(lt(0, dist))
+        return(and(lt(0, dist), gt(robot.raycast_dist, 20)))
     }
 }
 

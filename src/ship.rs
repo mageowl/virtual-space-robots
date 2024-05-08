@@ -59,7 +59,7 @@ pub struct ShipHandle {
 }
 
 pub struct Ship {
-    name: String,
+    pub name: String,
     pos: Vector2,
     rotation: f32,
     thread: JoinHandle<()>,
@@ -154,6 +154,14 @@ impl Ship {
             raycast_dist,
             pos: self.pos,
             rotation: self.rotation,
+        }
+    }
+
+    pub fn is_destroyed(&self) -> bool {
+        if let State::Destroyed = self.state {
+            true
+        } else {
+            false
         }
     }
 }
