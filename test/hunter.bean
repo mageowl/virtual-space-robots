@@ -10,6 +10,8 @@ fn(<turn_to>): {
     }
 }
 
+
+const(<step_speed>): 40
 fn(<move>): {
     let(<dist>): p(0)
     while: {
@@ -17,9 +19,13 @@ fn(<move>): {
         dist: -(dist, step_speed)
 
         if(eq(robot.raycast, "ship")): {
+            robot.turn(3)
             robot.shoot()
             move(-(robot.raycast_dist, 40))
             super.return(false)
+        }
+        if(eq(robot.raycast, "bullet")): {
+            robot.shoot()
         }
 
         return(lt(0, dist))
@@ -28,7 +34,6 @@ fn(<move>): {
 
 fn(<min>): ifv(lt(p(0), p(1)), p(0), p(1))
 
-const(<step_speed>): 30.0
 
 while: {
     let(<i>): 0
@@ -41,6 +46,11 @@ while: {
         if(eq(robot.raycast, "ship")): {
             ship_dist: robot.raycast_dist
             ship_angle: i
+            robot.turn(3)
+            robot.shoot()
+            super.return(false)
+        }
+        if(eq(robot.raycast, "bullet")): {
             robot.shoot()
         }
         
@@ -60,6 +70,6 @@ while: {
         return(not(eq(i, 360)))
     }
     
-    turn_to(ifv(eq(ship_angle, -1), max_angle, ship_angle))
+    turn_to(ifv(eq(ship_angle, -1), max_angle, 0))
     move(ifv(eq(ship_dist, -1), -(max_dist, 40), ship_dist))
 }
