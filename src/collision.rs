@@ -10,7 +10,7 @@ use crate::object::Object;
 pub type Circle = (Vector2, f32);
 
 pub fn check_collision_circles(circle1: Circle, circle2: Circle) -> bool {
-    if circle1.1 == 0.0 || circle2.1 == 0.0 {
+    if circle1.1 == 0.0 || circle2.1 == 0.0 || circle1 == circle2 {
         false
     } else {
         collision::check_collision_circles(circle1.0, circle1.1, circle2.0, circle2.1)

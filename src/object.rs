@@ -17,10 +17,6 @@ pub trait Object {
         let shape2 = other.get_shape();
         collision::check_collision_circles(shape1.0, shape1.1, shape2.0, shape2.1)
     }
-
-    fn is_collection(&self) -> bool {
-        false
-    }
 }
 
 impl<T: Object> Object for Vec<T> {
@@ -41,10 +37,6 @@ impl<T: Object> Object for Vec<T> {
     fn get_shape(&self) -> Circle {
         (Vector2::zero(), 0.0)
     }
-
-    fn is_collection(&self) -> bool {
-        true
-    }
 }
 
 impl<T: Object> Object for VecDeque<T> {
@@ -64,9 +56,5 @@ impl<T: Object> Object for VecDeque<T> {
 
     fn get_shape(&self) -> Circle {
         (Vector2::zero(), 0.0)
-    }
-
-    fn is_collection(&self) -> bool {
-        true
     }
 }
