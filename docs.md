@@ -5,6 +5,10 @@
 - `robot.shoot()`
 - `robot.raycast` = `"ship"`, `"bullet"`, `"rock"`, `"none"`, `"wall"`
 - `robot.raycast_dist` = number in pixels
+- `robot.x`
+- `robot.y`
+- `robot.rayhit_x`
+- `robot.rayhit_y`
 
 # basics of bean script
 

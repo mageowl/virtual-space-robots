@@ -59,7 +59,10 @@ pub fn construct(module: &mut ModuleBuilder) {
         .function("raycast", fn_raycast)
         .function("raycast_dist", fn_raycast_dist)
         .function("x", fn_x)
-        .function("y", fn_y);
+        .function("y", fn_y)
+        .function("rayhit_x", fn_rayhit_x)
+        .function("rayhit_y", fn_rayhit_y)
+        .function("rotation", fn_rotation);
 }
 
 fn fn_move(args: Vec<Data>, _b: Option<Function>, scope: ScopeRef) -> Result<Data, Error> {
@@ -162,11 +165,11 @@ fn fn_raycast_dist(_a: Vec<Data>, _b: Option<Function>, scope: ScopeRef) -> Resu
             .registry,
     );
 
-    let raycast =
+    let mutex =
         get_mutex(&registry).trace(ErrorSource::Builtin(String::from("robot_api:raycast")))?;
-    let raycast_guard = raycast.lock().unwrap();
+    let mutex_lock = mutex.lock().unwrap();
 
-    Ok(Data::Number(raycast_guard.raycast_dist as f64))
+    Ok(Data::Number(mutex_lock.raycast_dist as f64))
 }
 
 fn fn_x(_a: Vec<Data>, _b: Option<Function>, scope: ScopeRef) -> Result<Data, Error> {
@@ -180,11 +183,11 @@ fn fn_x(_a: Vec<Data>, _b: Option<Function>, scope: ScopeRef) -> Result<Data, Er
             .registry,
     );
 
-    let raycast =
+    let mutex =
         get_mutex(&registry).trace(ErrorSource::Builtin(String::from("robot_api:raycast")))?;
-    let raycast_guard = raycast.lock().unwrap();
+    let mutex_lock = mutex.lock().unwrap();
 
-    Ok(Data::Number(raycast_guard.pos.x as f64))
+    Ok(Data::Number(mutex_lock.pos.x as f64))
 }
 
 fn fn_y(_a: Vec<Data>, _b: Option<Function>, scope: ScopeRef) -> Result<Data, Error> {
@@ -198,9 +201,69 @@ fn fn_y(_a: Vec<Data>, _b: Option<Function>, scope: ScopeRef) -> Result<Data, Er
             .registry,
     );
 
-    let raycast =
+    let mutex =
         get_mutex(&registry).trace(ErrorSource::Builtin(String::from("robot_api:raycast")))?;
-    let raycast_guard = raycast.lock().unwrap();
+    let mutex_lock = mutex.lock().unwrap();
 
-    Ok(Data::Number(raycast_guard.pos.y as f64))
+    Ok(Data::Number(mutex_lock.pos.y as f64))
+}
+
+fn fn_rayhit_x(_a: Vec<Data>, _b: Option<Function>, scope: ScopeRef) -> Result<Data, Error> {
+    let binding = RefCell::borrow(&scope).get_file_module().ok_or(Error::new(
+        "Cannot connect to api outside of module.",
+        ErrorSource::Builtin(String::from("robot_api:raycast")),
+    ))?;
+    let borrowed = RefCell::borrow(&binding);
+    let registry = RefCell::borrow(
+        &as_type!(borrowed => CustomModule, "Returned non-CustomModule from get_file_module")
+            .registry,
+    );
+
+    let mutex =
+        get_mutex(&registry).trace(ErrorSource::Builtin(String::from("robot_api:raycast")))?;
+    let mutex_lock = mutex.lock().unwrap();
+
+    Ok(Data::Number(
+        (mutex_lock.pos.x + mutex_lock.rotation.to_radians().cos() * mutex_lock.raycast_dist)
+            as f64,
+    ))
+}
+
+fn fn_rayhit_y(_a: Vec<Data>, _b: Option<Function>, scope: ScopeRef) -> Result<Data, Error> {
+    let binding = RefCell::borrow(&scope).get_file_module().ok_or(Error::new(
+        "Cannot connect to api outside of module.",
+        ErrorSource::Builtin(String::from("robot_api:raycast")),
+    ))?;
+    let borrowed = RefCell::borrow(&binding);
+    let registry = RefCell::borrow(
+        &as_type!(borrowed => CustomModule, "Returned non-CustomModule from get_file_module")
+            .registry,
+    );
+
+    let mutex =
+        get_mutex(&registry).trace(ErrorSource::Builtin(String::from("robot_api:raycast")))?;
+    let mutex_lock = mutex.lock().unwrap();
+
+    Ok(Data::Number(
+        (mutex_lock.pos.y + mutex_lock.rotation.to_radians().sin() * mutex_lock.raycast_dist)
+            as f64,
+    ))
+}
+
+fn fn_rotation(_a: Vec<Data>, _b: Option<Function>, scope: ScopeRef) -> Result<Data, Error> {
+    let binding = RefCell::borrow(&scope).get_file_module().ok_or(Error::new(
+        "Cannot connect to api outside of module.",
+        ErrorSource::Builtin(String::from("robot_api:raycast")),
+    ))?;
+    let borrowed = RefCell::borrow(&binding);
+    let registry = RefCell::borrow(
+        &as_type!(borrowed => CustomModule, "Returned non-CustomModule from get_file_module")
+            .registry,
+    );
+
+    let mutex =
+        get_mutex(&registry).trace(ErrorSource::Builtin(String::from("robot_api:raycast")))?;
+    let mutex_lock = mutex.lock().unwrap();
+
+    Ok(Data::Number(mutex_lock.rotation as f64))
 }

@@ -55,6 +55,7 @@ pub struct ShipHandle {
     raycast: String,
     raycast_dist: f32,
     pos: Vector2,
+    rotation: f32,
 }
 
 pub struct Ship {
@@ -69,7 +70,7 @@ pub struct Ship {
 }
 
 impl Ship {
-    const MOVE_SPEED: f32 = 100.0;
+    const MOVE_SPEED: f32 = 150.0;
     const TURN_SPEED: f32 = 360.0;
     const SHOOT_OFFSET: f32 = 40.1;
     const SHOOT_COOLDOWN: f32 = 1.0;
@@ -80,6 +81,7 @@ impl Ship {
             raycast: String::from("none"),
             raycast_dist: -1.0,
             pos: Vector2::new(x, y),
+            rotation: 0.0,
         }));
         let handle_read = Arc::clone(&handle);
         let name = PathBuf::from(path.clone())
@@ -137,7 +139,7 @@ impl Ship {
 
     fn make_handle(&self, collision_frame: &CollisionFrame) -> ShipHandle {
         let (raycast, raycast_dist) = collision_frame.raycast(
-            vec!["ship", "rock"],
+            vec!["ship", "rock", "bullet"],
             self.pos
                 + Vector2::new(
                     self.rotation.to_radians().cos(),
@@ -151,6 +153,7 @@ impl Ship {
             raycast,
             raycast_dist,
             pos: self.pos,
+            rotation: self.rotation,
         }
     }
 }

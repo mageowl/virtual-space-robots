@@ -1,3 +1,5 @@
+// smart_turret by mageowl
+
 use("robot_api", <robot>)
 
 fn(<turn_to>): {
@@ -8,7 +10,11 @@ fn(<turn_to>): {
     }
 }
 
-let(<last_position>): ""
+fn(<mod>): -(p(0), *(p(1), round(/(p(0), p(1)))))
+
+fn(<inverse>): mod(+(p(0), 180), 360)
+
+let(<last_angle>): none
 
 while: {
     let(<i>): 0
@@ -18,12 +24,15 @@ while: {
 
     while: {
         if(eq(robot.raycast, "ship")): {
-            killed: true
             robot.shoot()
-            return(false)
         }
         
-        if(gt(robot.raycast_dist, max_dist)): {
+        if(
+            and(
+                gt(robot.raycast_dist, max_dist), 
+                not(eq(last_angle, inverse(i)))
+            )
+        ): {
             max_dist: robot.raycast_dist
             max_angle: i
         }
@@ -41,6 +50,5 @@ while: {
     robot.move(-(max_dist, 50))
     turn_to(-(360, max_angle))
 
-    last_position: +(str(robot.x), ":", str(robot.y))
-    print(seen_positions)
+    last_angle: max_angle
 }

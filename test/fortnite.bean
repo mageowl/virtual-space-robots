@@ -1,0 +1,29 @@
+// fortnite by gooodgy
+
+use("robot_api", <robot>)
+let(<rot>): 180
+fn(<testRay>): {
+    let(<v>): false
+    if(eq(robot.raycast,"ship")): {
+        return(true)
+    }
+    return(v)
+}
+while: {
+    if(eq(robot.raycast,"ship")): {
+        robot.shoot()
+        robot.turn(10)
+        
+    } else_if(gt(robot.raycast_dist,20)): {
+        robot.move(19)
+        
+    }else: {
+        robot.turn(25)
+    }
+   if(gt(20,robot.raycast_dist)):  {
+        if(not(list("wall").has(robot.raycast))):{
+            robot.move(10)
+        }
+    
+    }
+}
