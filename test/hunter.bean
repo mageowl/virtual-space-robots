@@ -19,13 +19,9 @@ fn(<move>): {
         dist: -(dist, step_speed)
 
         if(eq(robot.raycast, "ship")): {
-            robot.turn(3)
             robot.shoot()
             move(-(robot.raycast_dist, 40))
             super.return(false)
-        }
-        if(eq(robot.raycast, "bullet")): {
-            robot.shoot()
         }
 
         return(lt(0, dist))
@@ -46,7 +42,7 @@ while: {
         if(eq(robot.raycast, "ship")): {
             ship_dist: robot.raycast_dist
             ship_angle: i
-            robot.turn(3)
+            robot.turn(5)
             robot.shoot()
             super.return(false)
         }
