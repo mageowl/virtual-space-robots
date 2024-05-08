@@ -85,8 +85,8 @@ fn main() {
         let mut d = rl.begin_drawing(&thread);
 
         d.clear_background(Color::BLACK);
-        ships.draw(&mut d, &assets);
         rocks.draw(&mut d, &assets);
+        ships.draw(&mut d, &assets);
         bullet_pool.borrow().draw(&mut d, &assets);
     }
 }

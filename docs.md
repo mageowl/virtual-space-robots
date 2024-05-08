@@ -1,14 +1,15 @@
 # robot functions
 
-- `robot.move(number: pixels)`
-- `robot.turn(number: degrees)`
-- `robot.shoot()`
-- `robot.raycast` = `"ship"`, `"bullet"`, `"rock"`, `"none"`, `"wall"`
-- `robot.raycast_dist` = number in pixels
-- `robot.x`
-- `robot.y`
-- `robot.rayhit_x`
-- `robot.rayhit_y`
+- `robot_api.move(number: pixels)`
+- `robot_api.turn(number: degrees)`
+- `robot_api.shoot()`
+- `robot_api.raycast` = `"ship"`, `"bullet"`, `"rock"`, `"none"`, `"wall"`
+- `robot_api.raycast_dist` = number in pixels
+- `robot_api.x`
+- `robot_api.y`
+- `robot_api.rayhit_x`
+- `robot_api.rayhit_y`
+- `robot_api.rotation`
 
 # basics of bean script
 
