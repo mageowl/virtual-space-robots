@@ -102,12 +102,15 @@ fn fn_turn(args: Vec<Data>, _b: Option<Function>, scope: ScopeRef) -> Result<Dat
     );
     let sender =
         get_sender(&registry).trace(ErrorSource::Builtin(String::from("robot_api:turn")))?;
-    sender.send(APIRequest::Turn(d as f32)).map_err(|_| {
-        Error::new(
-            "Failed to send API request.",
-            ErrorSource::Builtin(String::from("robot_api:turn")),
-        )
-    })?;
+
+    sender
+        .send(APIRequest::Turn(d as f32))
+        .map_err(|send_error| {
+            Error::new(
+                &(String::from("Failed to send API request: ") + &send_error.to_string()),
+                ErrorSource::Builtin(String::from("robot_api:turn")),
+            )
+        })?;
     thread::park();
 
     Ok(Data::None)

@@ -27,7 +27,6 @@ fn main() {
     let mut positions: Vec<(f32, f32)> = Vec::new();
     let mut rocks: Vec<Rock> = make_rocks(&mut positions);
     let mut ships: Vec<Ship> = make_ships(&mut positions, &bullet_pool);
-    let mut scores = vec![0usize; ships.len()];
     let mut ship_did_win = false;
 
     while !rl.window_should_close() {
@@ -43,17 +42,7 @@ fn main() {
         bullet_pool.borrow_mut().update(&rl, &collision_frame);
 
         if ships.iter().filter(|s| !s.is_destroyed()).count() == 1 && !ship_did_win {
-            for (i, _) in ships.iter().enumerate().filter(|s| !s.1.is_destroyed()) {
-                scores[i] += 1;
-            }
             ship_did_win = true;
-        }
-
-        if rl.is_key_pressed(KeyboardKey::KEY_R) {
-            positions = Vec::new();
-            rocks = make_rocks(&mut positions);
-            ships = make_ships(&mut positions, &bullet_pool);
-            ship_did_win = false;
         }
 
         // DRAW  //
@@ -72,18 +61,6 @@ fn main() {
                 24,
                 Color::GREEN,
             );
-
-            let mut y = 10;
-            for (i, ship) in ships.iter().enumerate() {
-                d.draw_text(
-                    &(ship.name.clone() + ": " + &scores[i].to_string()),
-                    10,
-                    y,
-                    24,
-                    Color::WHITE,
-                );
-                y += 34;
-            }
         }
     }
 }
