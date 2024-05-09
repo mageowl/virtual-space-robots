@@ -38,7 +38,7 @@ while: {
     if(eq(robot.raycast, "ship")): robot.shoot()
     else_if(and(eq(robot.raycast, "rock"), lt(robot.raycast_dist, 40))): while: {
         robot.turn(100)
-        return(gt(robot.raycast_dist, 40))
+        return(lt(robot.raycast_dist, 40))
     }
 
     robot.turn(5)
