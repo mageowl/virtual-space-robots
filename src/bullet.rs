@@ -38,7 +38,7 @@ impl Object for Bullet {
     fn update(&mut self, rl: &RaylibHandle, collision_frame: &CollisionFrame) {
         self.lifetime -= rl.get_frame_time();
 
-        if collision_frame.check_collision(vec!["ship", "rock", "bullet"], self.get_shape()) {
+        if collision_frame.check_collision(vec!["rock", "bullet"], self.get_shape()) {
             self.sleep_queued = true
         }
 
