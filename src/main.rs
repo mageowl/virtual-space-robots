@@ -45,7 +45,7 @@ fn main() {
             ship_did_win = true;
         }
 
-        // DRAW  //
+        // DRAW //
         let mut d = rl.begin_drawing(&thread);
 
         d.clear_background(Color::BLACK);
@@ -55,7 +55,13 @@ fn main() {
 
         if ship_did_win {
             d.draw_text(
-                &(ships[0].name.clone() + " won."),
+                &(ships
+                    .iter()
+                    .filter(|s| !s.is_destroyed())
+                    .next()
+                    .map(|s| s.name.clone())
+                    .unwrap_or(String::new())
+                    + " won."),
                 10,
                 936,
                 24,
