@@ -1,0 +1,45 @@
+// lurker by mageowl
+use("robot_api", <robot>)
+
+fn(<turn_to>): {
+    if(lt(p(0), 180)): {
+        robot.turn(p(0))
+    } else: {
+        robot.turn(-(p(0), 360))
+    }
+}
+
+let(<i>): 0
+let(<min_dist>): 1000
+let(<min_angle>): 0
+
+while: {
+    if(
+        and(
+            lt(robot.raycast_dist, min_dist), 
+            eq(robot.raycast, "rock")
+        )
+    ): {
+        min_dist: robot.raycast_dist
+        min_angle: i
+    }
+
+    robot.turn(10)
+    i: +(i, 10)
+
+    return(not(eq(i, 360)))
+}
+
+turn_to(min_angle)
+robot.move(-(min_dist, 5))
+robot.turn(90)
+
+while: {
+    if(eq(robot.raycast, "ship")): robot.shoot()
+    else_if(and(eq(robot.raycast, "rock"), lt(robot.raycast_dist, 40))): while: {
+        robot.turn(100)
+        return(gt(robot.raycast_dist, 40))
+    }
+
+    robot.turn(5)
+}
