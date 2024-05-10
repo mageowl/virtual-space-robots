@@ -70,12 +70,23 @@ fn(<check_shoot>): {
 }
 
 while: {
-    robot.turn(45)
-    check_shoot()
-    robot.turn(45)
-    check_shoot()
-    robot.turn(-45)
-    check_shoot()
-    robot.turn(-45)
-    check_shoot()
+    repeat(20): {
+        robot.turn(22.5)
+        check_shoot()
+        robot.turn(22.5)
+        check_shoot()
+        robot.turn(22.5)
+        check_shoot()
+        robot.turn(22.5)
+        check_shoot()
+        robot.turn(-22.5)
+        check_shoot()
+        robot.turn(-22.5)
+        check_shoot()
+        robot.turn(-22.5)
+        check_shoot()
+        robot.turn(-22.5)
+        check_shoot()
+    }
+    robot.shoot()
 }
