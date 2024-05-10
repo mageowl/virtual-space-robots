@@ -22,7 +22,7 @@ pub struct Bullet {
 
 impl Bullet {
     const SPEED: f32 = 400.0;
-    const LIFETIME: f32 = 3.0;
+    const LIFETIME: f32 = 4.0;
 
     fn new() -> Self {
         Self {
