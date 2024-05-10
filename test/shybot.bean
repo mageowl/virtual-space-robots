@@ -1,0 +1,81 @@
+// shybot by egg2x on scratch
+use("robot_api", <robot>)
+
+fn(<turn_to>): {
+    let(<angle>): -(p(0), *(floor(/(p(0), 360)), 360))
+    if(lt(angle, 180)): {
+        robot.turn(angle)
+    } else: {
+        robot.turn(-(angle, 360))
+    }
+}
+
+let(<i>): 0
+let(<min_dist>): 1000
+let(<min_angle>): 0
+
+while: {
+    if(
+        and(
+            lt(robot.raycast_dist, min_dist), 
+            eq(robot.raycast, "wall")
+        )
+    ): {
+        min_dist: robot.raycast_dist
+        min_angle: i
+    }
+
+    robot.turn(10)
+    i: +(i, 10)
+
+    return(not(eq(i, 360)))
+}
+
+turn_to(min_angle)
+robot.move(robot.raycast_dist)
+
+// screen is 1200x960
+if(or(lt(robot.x, 40), gt(robot.x, 1160))): {
+    if(lt(robot.y, 480)): {
+        // move up (270 degrees)
+        turn_to(-(270, robot.rotation))
+    } else: {
+        // move down (90 degrees)
+        turn_to(-(90, robot.rotation))
+    }
+} else_if(or(lt(robot.y, 40), gt(robot.y, 920))): {
+    if(lt(robot.x, 600)): {
+        // move left (180 degrees)
+        turn_to(-(180, robot.rotation))
+    } else: {
+        // move right (0 degrees)
+        turn_to(-(0, robot.rotation))
+    }
+}
+
+if(eq(robot.raycast, "rock")): {
+    robot.shoot()
+    robot.shoot()
+}
+robot.move(robot.raycast_dist)
+robot.turn(95)
+
+if(eq(robot.raycast, "wall")): {
+    robot.turn(85)
+} else: robot.turn(-5)
+
+fn(<check_shoot>): {
+    if(eq(robot.raycast, "ship")):
+        robot.shoot()
+}
+
+while: {
+    robot.turn(45)
+    check_shoot()
+    robot.turn(45)
+    check_shoot()
+    robot.turn(-45)
+    check_shoot()
+    robot.turn(-45)
+    check_shoot()
+}
