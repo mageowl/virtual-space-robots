@@ -204,7 +204,7 @@ impl Object for Ship {
             }
             State::Turning(dist) => {
                 let dist_moved = dist.abs().min(Self::TURN_SPEED * rl.get_frame_time());
-                self.rotation += dist_moved * dist.signum();
+                self.rotation = (self.rotation + dist_moved * dist.signum()).rem_euclid(360.0);
                 if dist_moved < dist.abs() {
                     self.state = State::Turning(dist - dist_moved * dist.signum());
                 } else {
