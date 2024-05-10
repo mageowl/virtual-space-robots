@@ -15,7 +15,7 @@ let(<i>): 0
 let(<min_dist>): 1000
 let(<min_angle>): 0
 
-while: {
+repeat(36): {
     if(
         and(
             lt(robot.raycast_dist, min_dist), 
@@ -32,8 +32,6 @@ while: {
 
     robot.turn(10)
     i: +(i, 10)
-
-    return(not(eq(i, 360)))
 }
 
 turn_to(min_angle)

@@ -25,6 +25,10 @@ while: {
         min_angle: i
     }
 
+    if(eq(robot.raycast, "ship")): {
+        robot.shoot()
+    }
+
     robot.turn(10)
     i: +(i, 10)
 
