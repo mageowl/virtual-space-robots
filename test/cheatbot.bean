@@ -44,7 +44,7 @@ sleep(1000) // wait for shybot to position itself
 // screen is 1200x960
 if(or(lt(robot.x, 40), gt(robot.x, 1160))): {
     turn_to(-(90, robot.rotation))
-    robot.move(-(ifv(lt(robot.y, 480), 40, 970), robot.y))
+    robot.move(-(ifv(lt(robot.y, 480), 40, 920), robot.y))
     if(lt(robot.x, 40)): {
         robot.turn(-90)
         robot.shoot()
@@ -56,9 +56,9 @@ if(or(lt(robot.x, 40), gt(robot.x, 1160))): {
         robot.shoot()
         robot.shoot()
         robot.shoot()
-        robot.turn(=90)
+        robot.turn(-90)
     }
-    robot.move(-(ifv(lt(robot.y, 480), 970, 40), robot.y))
+    robot.move(-(ifv(lt(robot.y, 480), 920, 40), robot.y))
     if(lt(robot.x, 40)): {
         robot.turn(-90)
         robot.shoot()
