@@ -2,10 +2,11 @@
 use("robot_api", <robot>)
 
 fn(<turn_to>): {
-    if(lt(p(0), 180)): {
-        robot.turn(p(0))
+    let(<angle>): -(p(0), *(floor(/(p(0), 360)), 360))
+    if(lt(angle, 180)): {
+        robot.turn(angle)
     } else: {
-        robot.turn(-(p(0), 360))
+        robot.turn(-(angle, 360))
     }
 }
 
@@ -32,7 +33,6 @@ while: {
 
 turn_to(min_angle)
 robot.move(-(min_dist, 5))
-robot.turn(90)
 
 while: {
     if(eq(robot.raycast, "ship")): robot.shoot()
