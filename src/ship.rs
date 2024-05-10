@@ -21,7 +21,7 @@ use raylib::{
     color::Color,
     drawing::{RaylibDraw, RaylibDrawHandle},
     math::{Rectangle, Vector2},
-    RaylibHandle,
+    text, RaylibHandle,
 };
 
 use self::api::APIRequest;
@@ -256,7 +256,7 @@ impl Object for Ship {
         }
         d.draw_text(
             &self.name,
-            self.pos.x as i32 - 50,
+            self.pos.x as i32 - text::measure_text(&self.name, 18) / 2,
             self.pos.y as i32 - 50,
             18,
             Color::GREEN,
