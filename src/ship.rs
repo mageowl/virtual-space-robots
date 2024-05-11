@@ -1,5 +1,5 @@
 use std::{
-    fmt::{Debug, Pointer},
+    fmt::Debug,
     fs,
     path::PathBuf,
     rc::Rc,

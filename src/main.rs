@@ -34,7 +34,6 @@ fn main() {
             .iter()
             .combinations(2)
             .flat_map(|pair| {
-                dbg!(&pair);
                 let [s1, s2] = &pair[..] else {
                     return Vec::new();
                 };
