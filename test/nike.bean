@@ -1,0 +1,71 @@
+// nike by mageowl
+// forked from lurker by mageowl
+use("robot_api", <robot>)
+
+fn(<turn_to>): {
+    let(<angle>): -(p(0), *(floor(/(p(0), 360)), 360))
+    if(lt(angle, 180)): {
+        robot.turn(angle)
+    } else: {
+        robot.turn(-(angle, 360))
+    }
+}
+
+let(<i>): 0
+let(<min_dist>): 1000
+let(<min_angle>): 0
+
+while: {
+    if(
+        and(
+            lt(robot.raycast_dist, min_dist), 
+            eq(robot.raycast, "rock")
+        )
+    ): {
+        min_dist: robot.raycast_dist
+        min_angle: i
+    }
+
+    if(eq(robot.raycast, "ship")): {
+        robot.shoot()
+    }
+
+    robot.turn(10)
+    i: +(i, 10)
+
+    return(not(eq(i, 360)))
+}
+
+while: {
+    turn_to(min_angle)
+    robot.move(-(min_dist, 5))
+    robot.turn(90)
+
+    min_dist: 1000
+    min_angle: 0
+    let(<direction>): 1
+    let(<j>): 0
+
+    while: {
+
+        if(eq(robot.raycast, "ship")): {
+            robot.shoot()
+            j: 0
+        } else_if(and(eq(robot.raycast, "rock"), lt(robot.raycast_dist, 40))): {
+            direction: *(direction, -1)
+            j: +(j, 1)
+            if(gt(j, 10)): super.return(false)
+        } else_if(
+            and(
+                lt(robot.raycast_dist, min_dist), 
+                eq(robot.raycast, "rock")
+            )
+        ): {
+            min_dist: robot.raycast_dist
+            min_angle: robot.rotation
+        }
+
+        robot.turn(*(10, direction))
+    }
+    turn_to(-(0, robot.rotation))
+}

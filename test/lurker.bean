@@ -37,13 +37,12 @@ while: {
 
 turn_to(min_angle)
 robot.move(-(min_dist, 5))
+robot.turn(90)
 
+let(<d>): 1
 while: {
     if(eq(robot.raycast, "ship")): robot.shoot()
-    else_if(and(eq(robot.raycast, "rock"), lt(robot.raycast_dist, 40))): while: {
-        robot.turn(100)
-        return(lt(robot.raycast_dist, 40))
-    }
+    else_if(and(eq(robot.raycast, "rock"), lt(robot.raycast_dist, 40))): d: *(d, -1)
 
-    robot.turn(5)
+    robot.turn(*(10, d))
 }
