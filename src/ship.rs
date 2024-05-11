@@ -1,4 +1,5 @@
 use std::{
+    fmt::{Debug, Pointer},
     fs,
     path::PathBuf,
     rc::Rc,
@@ -273,5 +274,14 @@ impl Object for Ship {
         } else {
             (self.pos, 20.0)
         }
+    }
+}
+
+impl Debug for Ship {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Ship")
+            .field("pos", &self.pos)
+            .field("rotation", &self.rotation)
+            .finish()
     }
 }

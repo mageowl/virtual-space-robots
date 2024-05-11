@@ -3,6 +3,7 @@ use std::env;
 use bean_script::util::{make_ref, MutRc};
 use bullet::BulletPool;
 use collision::{CollisionFrame, CollisionLayer};
+use itertools::Itertools;
 use object::Object;
 use raylib::prelude::*;
 use rock::Rock;
@@ -30,9 +31,11 @@ fn main() {
 
     rocks.append(
         &mut ships
-            .chunks(2)
+            .iter()
+            .combinations(2)
             .flat_map(|pair| {
-                let [s1, s2] = pair else {
+                dbg!(&pair);
+                let [s1, s2] = &pair[..] else {
                     return Vec::new();
                 };
                 let pos = s1.get_pos() + (s2.get_pos() - s1.get_pos()) * 0.5;
