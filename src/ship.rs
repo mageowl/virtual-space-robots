@@ -164,6 +164,10 @@ impl Ship {
             false
         }
     }
+
+    pub fn get_pos(&self) -> Vector2 {
+        self.pos
+    }
 }
 
 impl Object for Ship {
