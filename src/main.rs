@@ -25,8 +25,30 @@ fn main() {
     let bullet_pool = make_ref(BulletPool::new(60));
 
     let mut positions: Vec<(f32, f32)> = Vec::new();
-    let mut rocks: Vec<Rock> = make_rocks(&mut positions);
     let mut ships: Vec<Ship> = make_ships(&mut positions, &bullet_pool);
+    let mut rocks: Vec<Rock> = make_rocks(&mut positions);
+
+    rocks.append(
+        &mut ships
+            .chunks(2)
+            .flat_map(|pair| {
+                let [s1, s2] = pair else {
+                    return Vec::new();
+                };
+                let pos = s1.get_pos() + (s2.get_pos() - s1.get_pos()) * 0.5;
+
+                if positions
+                    .iter()
+                    .any(|(x, y)| (pos.x - x).abs() + (pos.y - y).abs() < 150.0)
+                {
+                    Vec::new()
+                } else {
+                    vec![Rock::new(pos.x, pos.y)]
+                }
+            })
+            .collect(),
+    );
+
     let mut ship_did_win = false;
 
     while !rl.window_should_close() {
