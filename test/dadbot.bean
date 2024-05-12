@@ -1,0 +1,102 @@
+// Dadbot by @leggett
+use("robot_api", <robot>)
+
+// fn(<my_function>): { // code... }
+
+// let(<my_variable_name>): // value
+// while: {
+  // if(/* condition */): return(false) // <- breaks while
+  // code...
+// }
+
+// repeat(n): { // code... }
+
+// let(<array>): list(1, 2, 3)
+// array.for(<item>): { print(item) }
+
+// Shoot a bullet if it isn't my bullet
+fn(<shoot_bullet>): {
+  let(<bullet_dist>): robot.raycast_dist
+  sleep(5)
+  if(and(eq(robot.raycast, "bullet"),lt(bullet_dist,robot.raycast_dist))): {
+    robot.shoot()
+  }
+}
+
+// Shoot a ship
+fn(<shoot_ship>): {
+  // TODO: use sleep and rayhit_x and rayhit_y to figure out which way it was going
+  if(eq(robot.raycast, "ship")): {
+    robot.turn(5)
+    robot.shoot()
+    robot.turn(-5)
+  }
+}
+
+// Shoot a rock
+fn(<shoot_rock>): {
+  let(<was_first_shot>): ifv(eq(p(0),none), true, p(0))
+
+  if(eq(robot.raycast, "rock")): {
+    robot.turn(5)
+    robot.shoot()
+    robot.turn(-5)
+    scan(was_first_shot)
+  }
+}
+
+
+// Scan full circle to see if there is a ship or bullet to shoot
+fn(<scan>): {
+  // Am I scanning after hitting a rock once?
+  let(<finish_rock_after>): ifv(eq(p(0),none), false, p(0))
+  
+  // Go back 10 degrees before the scan
+  robot.turn(-10)
+  
+  // Initialize saw_ship
+  let(<saw_ship>): false
+
+  // Scan 370 degrees (full turn plus the -10)
+  repeat(37): {
+    if(eq(robot.raycast, "ship")): {
+      saw_ship: true
+      shoot_ship()
+    }
+    
+    if(eq(robot.raycast, "bullet")): shoot_bullet()
+
+    // Turn 10 degrees
+    robot.turn(10)
+  }
+
+  // If scan was called in the middle of shooting a rock, finish it off
+  if(finish_rock_after): shoot_rock(false)
+
+  // If we saw a ship at some point, do another scan
+  if(saw_ship): scan()
+}
+
+// Scan once when starting in case there is a bot near by
+scan()
+
+// Main loop
+while: {
+	if(eq(robot.raycast, "rock")): {
+		shoot_rock()
+	}
+	if(eq(robot.raycast, "ship")): {
+    shoot_ship()
+    scan()
+    // super.return(false)
+  }
+  if(eq(robot.raycast, "bullet")): {
+    robot.shoot()
+    scan()
+  }
+
+	robot.turn(3)
+}
+
+robot.turn(3)
+robot.shoot()
