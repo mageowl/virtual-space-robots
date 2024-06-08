@@ -1,0 +1,15 @@
+// skybot by jtafey
+use("robot_api", <robot>)
+while: {
+    while: {
+        robot.move(10)
+        return(gt(robot.raycast_dist, 20))
+    }
+    repeat(5): {
+        robot.turn(20)
+        robot.shoot()
+        
+    }
+    robot.turn(80)
+    robot.shoot()
+}

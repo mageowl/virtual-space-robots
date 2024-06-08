@@ -1,0 +1,16 @@
+// froot_snax by scomprune
+use("robot_api", <robot>)
+
+while: {
+    while: {
+        if(eq(robot.raycast, "ship")): robot.shoot()
+        robot.turn(70)
+        return(lt(robot.raycast_dist, 100))
+    }
+    robot.move(100)
+    while: {
+        robot.turn(-70)
+        return(lt(robot.raycast_dist, 100))
+    }
+    robot.move(100)
+}
